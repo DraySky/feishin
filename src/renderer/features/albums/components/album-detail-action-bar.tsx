@@ -47,11 +47,12 @@ export const AlbumDetailActionBar = ({
                 <ActionIcon
                     className={styles.playButton}
                     icon="mediaPlay"
+                    iconProps={{ size: 'lg' }}
                     onClick={onPlay}
                     radius="xl"
-                    size={64}
+                    size={48}
                     tooltip={{ label: t('player.play') }}
-                    variant="filled"
+                    variant="transparent"
                 />
                 <ActionIcon
                     icon="mediaShuffle"
