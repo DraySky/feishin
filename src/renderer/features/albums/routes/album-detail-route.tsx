@@ -84,17 +84,16 @@ const AlbumDetailRoute = () => {
                 ) : (
                     <LibraryBackgroundOverlay backgroundColor={background} headerRef={heroRef} />
                 )}
-                {heroHeight > 0 && (
-                    <div
-                        className={styles.backgroundContinuation}
-                        style={
-                            {
-                                '--album-detail-background': background,
-                                top: `${heroHeight}px`,
-                            } as React.CSSProperties
-                        }
-                    />
-                )}
+                <div
+                    className={styles.backgroundContinuation}
+                    style={
+                        {
+                            '--album-detail-background': background,
+                            top: heroHeight > 0 ? `${heroHeight}px` : '0px',
+                            visibility: heroHeight > 0 ? 'visible' : 'hidden',
+                        } as React.CSSProperties
+                    }
+                />
                 <LibraryContainer>
                     <AlbumDetailHeader
                         heroRef={heroRef}
