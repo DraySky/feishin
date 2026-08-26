@@ -64,6 +64,7 @@ export const AlbumGroupHeader = ({
     const albumImageSize = useAlbumGroupImageSize() || 96;
     const rowHeight = {
         compact: TableItemSize.COMPACT,
+        medium: TableItemSize.MEDIUM,
         large: TableItemSize.LARGE,
         normal: TableItemSize.DEFAULT,
     }[size];

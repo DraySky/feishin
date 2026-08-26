@@ -540,6 +540,7 @@ export function isLastInAlbumGroup(
 
 function baseRowHeightForSize(size: ItemTableListColumn['size']): number {
     if (size === 'compact') return TableItemSize.COMPACT;
+    if (size === 'medium') return TableItemSize.MEDIUM;
     if (size === 'large') return TableItemSize.LARGE;
     return TableItemSize.DEFAULT;
 }

@@ -25,7 +25,7 @@ export type AlbumGroupMetadata = {
     songCount: number;
 };
 
-export type AlbumGroupTextSize = 'compact' | 'large' | 'normal';
+export type AlbumGroupTextSize = 'compact' | 'medium' | 'large' | 'normal';
 
 const metadataTextProps = {
     isMuted: true,

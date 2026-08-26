@@ -38,7 +38,7 @@ export type ItemTableListConfig = {
     itemType: LibraryItem;
     playerContext: PlayerContext;
     playlistId?: string;
-    size: 'compact' | 'default' | 'large';
+    size: 'compact' | 'medium' | 'default' | 'large';
     startRowIndex?: number;
     tableId: string;
 };

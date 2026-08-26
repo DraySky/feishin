@@ -87,7 +87,9 @@ const ImageColumnBase = (props: ItemTableListInnerColumn) => {
                         containerClassName={clsx({
                             [styles.compactImageContainer]: props.size === 'compact',
                             [styles.imageContainerWithAspectRatio]:
-                                props.size === 'default' || props.size === 'large',
+                                props.size === 'medium' ||
+                                props.size === 'default' ||
+                                props.size === 'large',
                         })}
                         enableDebounce={true}
                         enableViewport={false}
@@ -136,7 +138,9 @@ const ImageColumnBase = (props: ItemTableListInnerColumn) => {
                 className={clsx(styles.imageContainer, {
                     [styles.compactImageContainer]: props.size === 'compact',
                     [styles.skeletonWithAspectRatio]:
-                        props.size === 'default' || props.size === 'large',
+                        props.size === 'medium' ||
+                        props.size === 'default' ||
+                        props.size === 'large',
                 })}
             >
                 <Skeleton containerClassName={styles.skeleton} />

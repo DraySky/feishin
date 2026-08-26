@@ -122,6 +122,7 @@ const hasRequiredStateItemProperties = (
 
 export enum TableItemSize {
     COMPACT = 40,
+    MEDIUM = 50,
     DEFAULT = 66,
     LARGE = 88,
 }
@@ -843,7 +844,7 @@ interface ItemTableListProps {
     overrideControls?: Partial<ItemControls>;
     ref?: Ref<ItemListHandle>;
     rowHeight?: ((index: number, cellProps: TableItemProps) => number) | number;
-    size?: 'compact' | 'default' | 'large';
+    size?: 'compact' | 'medium' | 'default' | 'large';
     startRowIndex?: number;
 }
 
@@ -891,7 +892,7 @@ const ItemTableListStickyUI = memo(
         pinnedRowRef: RefObject<HTMLDivElement | null>;
         rowHeight?: ((index: number, cellProps: TableItemProps) => number) | number;
         rowRef: RefObject<HTMLDivElement | null>;
-        size: 'compact' | 'default' | 'large';
+        size: 'compact' | 'medium' | 'default' | 'large';
         stickyHeaderItemProps: TableItemProps;
         totalColumnCount: number;
     }) => {
@@ -1422,6 +1423,8 @@ const BaseItemTableList = ({
             const height =
                 size === 'compact'
                     ? TableItemSize.COMPACT
+                    : size === 'medium'
+                      ? TableItemSize.MEDIUM
                     : size === 'large'
                       ? TableItemSize.LARGE
                       : TableItemSize.DEFAULT;
@@ -1610,6 +1613,8 @@ const BaseItemTableList = ({
             const height =
                 size === 'compact'
                     ? TableItemSize.COMPACT
+                    : size === 'medium'
+                      ? TableItemSize.MEDIUM
                     : size === 'large'
                       ? TableItemSize.LARGE
                       : TableItemSize.DEFAULT;
