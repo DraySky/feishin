@@ -1,3 +1,10 @@
+.route-surface {
+    position: relative;
+    min-height: 100%;
+    background: var(--theme-colors-background);
+    isolation: isolate;
+}
+
 .hero-background {
     --album-color-hero-top: oklch(
         from var(--album-color-base) clamp(0.5, calc(l + 0.1), 0.66)
@@ -18,6 +25,7 @@
         var(--album-color-hero-mid) 55%,
         var(--album-color-hero-bottom) 100%
     );
+    z-index: 0;
 }
 
 .background-continuation {
@@ -50,4 +58,9 @@
             72%,
         var(--theme-colors-background) 100%
     );
+}
+
+.foreground {
+    position: relative;
+    z-index: 1;
 }

@@ -75,42 +75,46 @@ const AlbumDetailRoute = () => {
                 }}
                 ref={scrollAreaRef}
             >
-                {showBlurredImage ? (
-                    <LibraryBackgroundImage
-                        blur={albumBackgroundBlur}
-                        headerRef={heroRef}
-                        imageUrl={imageUrl}
-                    />
-                ) : (
-                    <LibraryBackgroundOverlay
-                        backgroundColor={background}
-                        className={styles.heroBackground}
-                        headerRef={heroRef}
-                        opacity={1}
+                <div className={styles.routeSurface}>
+                    {showBlurredImage ? (
+                        <LibraryBackgroundImage
+                            blur={albumBackgroundBlur}
+                            headerRef={heroRef}
+                            imageUrl={imageUrl}
+                        />
+                    ) : (
+                        <LibraryBackgroundOverlay
+                            backgroundColor={background}
+                            className={styles.heroBackground}
+                            headerRef={heroRef}
+                            opacity={1}
+                            style={
+                                {
+                                    '--album-color-base': background,
+                                } as React.CSSProperties
+                            }
+                        />
+                    )}
+                    <div
+                        className={styles.backgroundContinuation}
                         style={
                             {
-                                '--album-color-base': background,
+                                '--album-detail-background': background,
+                                top: heroHeight > 0 ? `${heroHeight}px` : '0px',
+                                visibility: heroHeight > 0 ? 'visible' : 'hidden',
                             } as React.CSSProperties
                         }
                     />
-                )}
-                <div
-                    className={styles.backgroundContinuation}
-                    style={
-                        {
-                            '--album-detail-background': background,
-                            top: heroHeight > 0 ? `${heroHeight}px` : '0px',
-                            visibility: heroHeight > 0 ? 'visible' : 'hidden',
-                        } as React.CSSProperties
-                    }
-                />
-                <LibraryContainer>
-                    <AlbumDetailHeader
-                        heroRef={heroRef}
-                        ref={headerRef as React.Ref<HTMLDivElement>}
-                    />
-                    <AlbumDetailContent />
-                </LibraryContainer>
+                    <div className={styles.foreground}>
+                        <LibraryContainer>
+                            <AlbumDetailHeader
+                                heroRef={heroRef}
+                                ref={headerRef as React.Ref<HTMLDivElement>}
+                            />
+                            <AlbumDetailContent />
+                        </LibraryContainer>
+                    </div>
+                </div>
             </NativeScrollArea>
         </AnimatedPage>
     );
