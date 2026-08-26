@@ -2,6 +2,8 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import { useRef } from 'react';
 import { useParams } from 'react-router';
 
+import styles from './album-detail-route.module.css';
+
 import { useItemImageUrl } from '/@/renderer/components/item-image/item-image';
 import { NativeScrollArea } from '/@/renderer/components/native-scroll-area/native-scroll-area';
 import { albumQueries } from '/@/renderer/features/albums/api/album-api';
@@ -9,6 +11,7 @@ import { AlbumDetailContent } from '/@/renderer/features/albums/components/album
 import { AlbumDetailHeader } from '/@/renderer/features/albums/components/album-detail-header';
 import { AnimatedPage } from '/@/renderer/features/shared/components/animated-page';
 import {
+    LibraryBackgroundFade,
     LibraryBackgroundImage,
     LibraryBackgroundOverlay,
 } from '/@/renderer/features/shared/components/library-background-overlay';
@@ -79,6 +82,7 @@ const AlbumDetailRoute = () => {
                 ) : (
                     <LibraryBackgroundOverlay backgroundColor={background} headerRef={headerRef} />
                 )}
+                <LibraryBackgroundFade className={styles.backgroundFade} headerRef={headerRef} />
                 <LibraryContainer>
                     <AlbumDetailHeader ref={headerRef as React.Ref<HTMLDivElement>} />
                     <AlbumDetailContent />

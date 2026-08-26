@@ -1,0 +1,11 @@
+.background-fade {
+    background: linear-gradient(
+        to bottom,
+        transparent 0%,
+        transparent 36%,
+        rgb(0 0 0 / 12%) 52%,
+        rgb(0 0 0 / 38%) 68%,
+        rgb(0 0 0 / 70%) 84%,
+        var(--theme-colors-background) 100%
+    );
+}
