@@ -82,7 +82,11 @@ const AlbumDetailRoute = () => {
                         imageUrl={imageUrl}
                     />
                 ) : (
-                    <LibraryBackgroundOverlay backgroundColor={background} headerRef={heroRef} />
+                    <LibraryBackgroundOverlay
+                        backgroundColor={background}
+                        headerRef={heroRef}
+                        opacity={0.88}
+                    />
                 )}
                 <div
                     className={styles.backgroundContinuation}

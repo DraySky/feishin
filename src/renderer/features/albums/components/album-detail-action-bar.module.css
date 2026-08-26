@@ -4,7 +4,8 @@
     gap: var(--theme-spacing-md) var(--theme-spacing-xl);
     align-items: center;
     width: 100%;
-    padding: 0 1rem calc(var(--theme-spacing-xl) + var(--theme-spacing-xs));
+    padding: var(--theme-spacing-lg) 1rem
+        calc(var(--theme-spacing-xl) + var(--theme-spacing-xs));
 
     @container (min-width: $mantine-breakpoint-sm) {
         padding-right: 2rem;

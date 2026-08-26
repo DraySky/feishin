@@ -10,16 +10,22 @@
         to bottom,
         color-mix(
                 in srgb,
-                var(--album-detail-background) 30%,
+                var(--album-detail-background) 58%,
                 var(--theme-colors-background)
             )
             0%,
         color-mix(
                 in srgb,
-                var(--album-detail-background) 15%,
+                var(--album-detail-background) 34%,
                 var(--theme-colors-background)
             )
-            55%,
+            38%,
+        color-mix(
+                in srgb,
+                var(--album-detail-background) 16%,
+                var(--theme-colors-background)
+            )
+            72%,
         var(--theme-colors-background) 100%
     );
 }
