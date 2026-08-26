@@ -4,7 +4,7 @@ import type {
 } from '/@/renderer/components/item-list/helpers/item-list-state';
 
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { ReactNode, useMemo, useRef, useState } from 'react';
+import { ReactNode, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { generatePath, useParams } from 'react-router';
 
@@ -26,13 +26,7 @@ import {
     ListConfigMenu,
     SONG_DISPLAY_TYPES,
 } from '/@/renderer/features/shared/components/list-config-menu';
-import {
-    CLIENT_SIDE_SONG_FILTERS,
-    ListSortByDropdownControlled,
-} from '/@/renderer/features/shared/components/list-sort-by-dropdown';
-import { ListSortOrderToggleButtonControlled } from '/@/renderer/features/shared/components/list-sort-order-toggle-button';
-import { FILTER_KEYS, searchLibraryItems } from '/@/renderer/features/shared/utils';
-import { useHotkeys } from '/@/renderer/hooks/use-hotkeys';
+import { FILTER_KEYS } from '/@/renderer/features/shared/utils';
 import { AppRoute } from '/@/renderer/router/routes';
 import { useCurrentServer, usePlayerSong } from '/@/renderer/store';
 import { useExternalLinks, useSettingsStore } from '/@/renderer/store/settings.store';
@@ -40,7 +34,6 @@ import { sentenceCase, titleCase } from '/@/renderer/utils';
 import { replaceURLWithHTMLLinks } from '/@/renderer/utils/linkify';
 import { normalizeReleaseTypes } from '/@/renderer/utils/normalize-release-types';
 import { setJsonSearchParam } from '/@/renderer/utils/query-params';
-import { sortSongList } from '/@/shared/api/utils';
 import { ActionIcon } from '/@/shared/components/action-icon/action-icon';
 import { Checkbox } from '/@/shared/components/checkbox/checkbox';
 import { Group } from '/@/shared/components/group/group';
@@ -48,9 +41,7 @@ import { Icon } from '/@/shared/components/icon/icon';
 import { Pill, PillLink } from '/@/shared/components/pill/pill';
 import { Spoiler } from '/@/shared/components/spoiler/spoiler';
 import { Stack } from '/@/shared/components/stack/stack';
-import { TextInput } from '/@/shared/components/text-input/text-input';
 import { Text } from '/@/shared/components/text/text';
-import { useDebouncedValue } from '/@/shared/hooks/use-debounced-value';
 import {
     Album,
     AlbumListSort,
@@ -58,7 +49,6 @@ import {
     LibraryItem,
     ServerType,
     Song,
-    SongListSort,
     SortOrder,
 } from '/@/shared/types/domain-types';
 import { ItemListKey, ListDisplayType } from '/@/shared/types/types';
@@ -715,26 +705,13 @@ function AlbumDetailCarousels({ data }: { data: Album }) {
 
 const AlbumDetailSongsTable = ({ songs }: AlbumDetailSongsTableProps) => {
     const { t } = useTranslation();
-    const [searchTerm, setSearchTerm] = useState('');
-    const [debouncedSearchTerm] = useDebouncedValue(searchTerm, 300);
     const tableConfig = useSettingsStore((state) => state.lists[ItemListKey.ALBUM_DETAIL]?.table);
 
     const currentSong = usePlayerSong();
 
-    const [sortBy, setSortBy] = useState<SongListSort>(SongListSort.ID);
-    const [sortOrder, setSortOrder] = useState<SortOrder>(SortOrder.ASC);
-
     const columns = useMemo(() => {
         return tableConfig?.columns || [];
     }, [tableConfig?.columns]);
-
-    const filteredSongs = useMemo(() => {
-        return sortSongList(
-            searchLibraryItems(songs, debouncedSearchTerm, LibraryItem.SONG),
-            sortBy,
-            sortOrder,
-        );
-    }, [songs, debouncedSearchTerm, sortBy, sortOrder]);
 
     const { handleColumnReordered } = useItemListColumnReorder({
         itemListKey: ItemListKey.ALBUM_DETAIL,
@@ -745,7 +722,7 @@ const AlbumDetailSongsTable = ({ songs }: AlbumDetailSongsTableProps) => {
     });
 
     const discGroups = useMemo(() => {
-        if (filteredSongs.length === 0) return [];
+        if (songs.length === 0) return [];
 
         const groups: Array<{
             discNumber: number;
@@ -755,7 +732,7 @@ const AlbumDetailSongsTable = ({ songs }: AlbumDetailSongsTableProps) => {
         let lastDiscNumber = -1;
         let currentGroupStartIndex = 0;
 
-        filteredSongs.forEach((song, index) => {
+        songs.forEach((song, index) => {
             if (song.discNumber !== lastDiscNumber) {
                 // If we have a previous group, calculate its item count
                 if (groups.length > 0) {
@@ -774,23 +751,13 @@ const AlbumDetailSongsTable = ({ songs }: AlbumDetailSongsTableProps) => {
 
         // Set item count for the last group
         if (groups.length > 0) {
-            groups[groups.length - 1].itemCount = filteredSongs.length - currentGroupStartIndex;
+            groups[groups.length - 1].itemCount = songs.length - currentGroupStartIndex;
         }
 
         return groups;
-    }, [filteredSongs]);
+    }, [songs]);
 
     const groups = useMemo(() => {
-        // Remove groups when filtering
-        if (debouncedSearchTerm?.trim()) {
-            return undefined;
-        }
-
-        // Remove groups when sorting
-        if (sortBy !== SongListSort.ID) {
-            return undefined;
-        }
-
         if (discGroups.length <= 1) {
             return undefined;
         }
@@ -821,7 +788,7 @@ const AlbumDetailSongsTable = ({ songs }: AlbumDetailSongsTableProps) => {
             },
             rowHeight: 40,
         }));
-    }, [debouncedSearchTerm, sortBy, discGroups, t]);
+    }, [discGroups, t]);
 
     const player = usePlayer();
 
@@ -843,19 +810,6 @@ const AlbumDetailSongsTable = ({ songs }: AlbumDetailSongsTableProps) => {
         };
     }, [player]);
 
-    const binding = useSettingsStore((state) => state.hotkeys.bindings.localSearch);
-
-    const searchInputRef = useRef<HTMLInputElement>(null);
-
-    useHotkeys([
-        [
-            binding.hotkey,
-            () => {
-                searchInputRef.current?.focus();
-            },
-        ],
-    ]);
-
     if (!tableConfig || columns.length === 0) {
         return null;
     }
@@ -863,38 +817,8 @@ const AlbumDetailSongsTable = ({ songs }: AlbumDetailSongsTableProps) => {
     const currentSongId = currentSong?.id;
 
     return (
-        <Stack gap="md">
-            <Group gap="sm" w="100%">
-                <TextInput
-                    classNames={{ input: styles.searchTextInput }}
-                    flex={1}
-                    leftSection={<Icon icon="search" />}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder={t('common.search')}
-                    radius="xl"
-                    ref={searchInputRef}
-                    rightSection={
-                        searchTerm ? (
-                            <ActionIcon
-                                icon="x"
-                                onClick={() => setSearchTerm('')}
-                                size="sm"
-                                variant="transparent"
-                            />
-                        ) : null
-                    }
-                    value={searchTerm}
-                />
-                <ListSortByDropdownControlled
-                    filters={CLIENT_SIDE_SONG_FILTERS}
-                    itemType={LibraryItem.SONG}
-                    setSortBy={(value) => setSortBy(value as SongListSort)}
-                    sortBy={sortBy}
-                />
-                <ListSortOrderToggleButtonControlled
-                    setSortOrder={(value) => setSortOrder(value as SortOrder)}
-                    sortOrder={sortOrder}
-                />
+        <Stack gap="xs">
+            <Group justify="flex-end" w="100%">
                 <ListConfigMenu
                     displayTypes={[
                         { hidden: true, value: ListDisplayType.GRID },
@@ -915,7 +839,7 @@ const AlbumDetailSongsTable = ({ songs }: AlbumDetailSongsTableProps) => {
                 autoFitColumns={tableConfig.autoFitColumns}
                 CellComponent={ItemTableListColumn}
                 columns={columns}
-                data={filteredSongs}
+                data={songs}
                 enableAlternateRowColors={tableConfig.enableAlternateRowColors}
                 enableDrag
                 enableDragScroll={false}
