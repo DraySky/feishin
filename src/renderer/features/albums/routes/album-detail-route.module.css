@@ -19,13 +19,20 @@
             clamp(0.045, calc(c * 0.95), 0.17) h
     );
 
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 0;
+    width: 100%;
+    pointer-events: none;
+    user-select: none;
+    background-color: var(--album-color-base);
     background-image: linear-gradient(
         to bottom,
         var(--album-color-hero-top) 0%,
         var(--album-color-hero-mid) 55%,
         var(--album-color-hero-bottom) 100%
     );
-    z-index: 0;
 }
 
 .background-continuation {
@@ -33,7 +40,6 @@
     left: 0;
     z-index: 0;
     width: 100%;
-    height: clamp(240px, 35vh, 360px);
     pointer-events: none;
     user-select: none;
     background: linear-gradient(

@@ -8,26 +8,21 @@ import { useAppThemeColors } from '/@/renderer/themes/use-app-theme';
 
 interface LibraryBackgroundOverlayProps {
     backgroundColor?: string;
-    className?: string;
     headerRef: React.RefObject<HTMLDivElement | null>;
     opacity?: number;
-    style?: React.CSSProperties;
 }
 
 export const LibraryBackgroundOverlay = ({
     backgroundColor,
-    className,
     headerRef,
     opacity = 0.7,
-    style,
 }: LibraryBackgroundOverlayProps) => {
     const height = useHeaderHeight(headerRef);
 
     return (
         <div
-            className={clsx(styles.overlay, className)}
+            className={styles.overlay}
             style={{
-                ...style,
                 backgroundColor,
                 height: height ? `${height + 64}px` : undefined,
                 opacity,

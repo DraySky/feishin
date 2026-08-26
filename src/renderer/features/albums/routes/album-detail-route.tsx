@@ -12,7 +12,6 @@ import { AlbumDetailHeader } from '/@/renderer/features/albums/components/album-
 import { AnimatedPage } from '/@/renderer/features/shared/components/animated-page';
 import {
     LibraryBackgroundImage,
-    LibraryBackgroundOverlay,
     useHeaderHeight,
 } from '/@/renderer/features/shared/components/library-background-overlay';
 import { LibraryContainer } from '/@/renderer/features/shared/components/library-container';
@@ -20,15 +19,21 @@ import { LibraryHeaderBar } from '/@/renderer/features/shared/components/library
 import { PageErrorBoundary } from '/@/renderer/features/shared/components/page-error-boundary';
 import { useFastAverageColor } from '/@/renderer/hooks';
 import { useAlbumBackground, useCurrentServerId } from '/@/renderer/store';
+import { useSettingsStore } from '/@/renderer/store/settings.store';
 import { LibraryItem } from '/@/shared/types/domain-types';
+import { ItemListKey } from '/@/shared/types/types';
 
 const ALBUM_DETAIL_BG_FALLBACK = 'var(--theme-colors-foreground-muted)';
+const ALBUM_DETAIL_TABLE_HEADER_HEIGHT = 40;
 
 const AlbumDetailRoute = () => {
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const headerRef = useRef<HTMLDivElement>(null);
     const heroRef = useRef<HTMLDivElement>(null);
     const { albumBackground, albumBackgroundBlur } = useAlbumBackground();
+    const enableTableHeader = useSettingsStore(
+        (state) => state.lists[ItemListKey.ALBUM_DETAIL]?.table.enableHeader,
+    );
 
     const { albumId } = useParams() as { albumId: string };
     const serverId = useCurrentServerId();
@@ -51,7 +56,14 @@ const AlbumDetailRoute = () => {
     });
 
     const background = backgroundColor ?? ALBUM_DETAIL_BG_FALLBACK;
+    const albumHeaderHeight = useHeaderHeight(headerRef);
     const heroHeight = useHeaderHeight(heroRef);
+    const continuationHeight = Math.max(
+        albumHeaderHeight -
+            heroHeight +
+            (enableTableHeader ? ALBUM_DETAIL_TABLE_HEADER_HEIGHT : 0),
+        0,
+    );
 
     const showBlurredImage = albumBackground;
 
@@ -83,14 +95,13 @@ const AlbumDetailRoute = () => {
                             imageUrl={imageUrl}
                         />
                     ) : (
-                        <LibraryBackgroundOverlay
-                            backgroundColor={background}
+                        <div
                             className={styles.heroBackground}
-                            headerRef={heroRef}
-                            opacity={1}
                             style={
                                 {
                                     '--album-color-base': background,
+                                    height: heroHeight > 0 ? `${heroHeight}px` : '0px',
+                                    visibility: heroHeight > 0 ? 'visible' : 'hidden',
                                 } as React.CSSProperties
                             }
                         />
@@ -100,8 +111,10 @@ const AlbumDetailRoute = () => {
                         style={
                             {
                                 '--album-detail-background': background,
+                                height: `${continuationHeight}px`,
                                 top: heroHeight > 0 ? `${heroHeight}px` : '0px',
-                                visibility: heroHeight > 0 ? 'visible' : 'hidden',
+                                visibility:
+                                    heroHeight > 0 && albumHeaderHeight > 0 ? 'visible' : 'hidden',
                             } as React.CSSProperties
                         }
                     />
