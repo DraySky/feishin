@@ -817,8 +817,27 @@ const AlbumDetailSongsTable = ({ songs }: AlbumDetailSongsTableProps) => {
     const currentSongId = currentSong?.id;
 
     return (
-        <Stack gap="xs">
-            <Group justify="flex-end" w="100%">
+        <ItemTableList
+            activeRowId={currentSongId}
+            autoFitColumns={tableConfig.autoFitColumns}
+            CellComponent={ItemTableListColumn}
+            columns={columns}
+            data={songs}
+            enableAlternateRowColors={tableConfig.enableAlternateRowColors}
+            enableDrag
+            enableDragScroll={false}
+            enableEntranceAnimation={false}
+            enableExpansion={false}
+            enableHeader={tableConfig.enableHeader}
+            enableHorizontalBorders={tableConfig.enableHorizontalBorders}
+            enableRowHoverHighlight={tableConfig.enableRowHoverHighlight}
+            enableSelection
+            enableSelectionDialog={false}
+            enableStickyGroupRows
+            enableStickyHeader
+            enableVerticalBorders={tableConfig.enableVerticalBorders}
+            groups={groups}
+            headerActions={
                 <ListConfigMenu
                     displayTypes={[
                         { hidden: true, value: ListDisplayType.GRID },
@@ -833,33 +852,12 @@ const AlbumDetailSongsTable = ({ songs }: AlbumDetailSongsTableProps) => {
                     }}
                     tableColumnsData={SONG_TABLE_COLUMNS}
                 />
-            </Group>
-            <ItemTableList
-                activeRowId={currentSongId}
-                autoFitColumns={tableConfig.autoFitColumns}
-                CellComponent={ItemTableListColumn}
-                columns={columns}
-                data={songs}
-                enableAlternateRowColors={tableConfig.enableAlternateRowColors}
-                enableDrag
-                enableDragScroll={false}
-                enableEntranceAnimation={false}
-                enableExpansion={false}
-                enableHeader={tableConfig.enableHeader}
-                enableHorizontalBorders={tableConfig.enableHorizontalBorders}
-                enableRowHoverHighlight={tableConfig.enableRowHoverHighlight}
-                enableSelection
-                enableSelectionDialog={false}
-                enableStickyGroupRows
-                enableStickyHeader
-                enableVerticalBorders={tableConfig.enableVerticalBorders}
-                groups={groups}
-                itemType={LibraryItem.SONG}
-                onColumnReordered={handleColumnReordered}
-                onColumnResized={handleColumnResized}
-                overrideControls={overrideControls}
-                size={tableConfig.size}
-            />
-        </Stack>
+            }
+            itemType={LibraryItem.SONG}
+            onColumnReordered={handleColumnReordered}
+            onColumnResized={handleColumnResized}
+            overrideControls={overrideControls}
+            size={tableConfig.size}
+        />
     );
 };

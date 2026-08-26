@@ -6,6 +6,7 @@ import React, {
     type JSXElementConstructor,
     memo,
     ReactElement,
+    ReactNode,
     Ref,
     RefObject,
     useCallback,
@@ -403,6 +404,7 @@ const VirtualizedTableGrid = ({
             getRowItem,
             groupHeaderInfoByRowIndex,
             groups: tableConfig.groups,
+            headerActions: tableConfig.headerActions,
             hasAlbumGroupColumn: parsedColumns.some((col) => col.id === TableColumn.ALBUM_GROUP),
             internalState: tableConfig.internalState,
             itemType: tableConfig.itemType,
@@ -782,6 +784,7 @@ export interface TableItemProps {
     getRowItem?: (rowIndex: number) => null | undefined | unknown;
     groupHeaderInfoByRowIndex?: Map<number, { groupIndex: number; startDataIndex: number }>;
     groups?: TableGroupHeader[];
+    headerActions?: ReactNode;
     hasAlbumGroupColumn?: boolean;
     internalState: ItemListStateActions;
     itemType: ItemTableListProps['itemType'];
@@ -825,6 +828,7 @@ interface ItemTableListProps {
     getLoadedItems?: () => unknown[];
     getRowId?: ((item: unknown) => string) | string;
     groups?: TableGroupHeader[];
+    headerActions?: ReactNode;
     headerHeight?: number;
     initialTop?: {
         behavior?: 'auto' | 'smooth';
@@ -1264,6 +1268,7 @@ const BaseItemTableList = ({
     getLoadedItems,
     getRowId,
     groups,
+    headerActions,
     headerHeight = 40,
     initialTop,
     itemCount,
@@ -1728,6 +1733,7 @@ const BaseItemTableList = ({
             enableVerticalBorders,
             getRowHeight,
             groups,
+            headerActions,
             internalState,
             itemType,
             pinnedLeftColumnCount,
@@ -1756,6 +1762,7 @@ const BaseItemTableList = ({
             enableVerticalBorders,
             getRowHeight,
             groups,
+            headerActions,
             internalState,
             itemType,
             onColumnReordered,
@@ -1806,6 +1813,7 @@ const BaseItemTableList = ({
             enableVerticalBorders,
             getRowHeight,
             groups,
+            headerActions,
             internalState,
             itemType,
             playerContext,
@@ -1830,6 +1838,7 @@ const BaseItemTableList = ({
             enableVerticalBorders,
             getRowHeight,
             groups,
+            headerActions,
             internalState,
             itemType,
             playerContext,
