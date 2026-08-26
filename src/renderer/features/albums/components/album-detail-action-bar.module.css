@@ -4,11 +4,15 @@
     gap: var(--theme-spacing-md) var(--theme-spacing-xl);
     align-items: center;
     width: 100%;
-    padding: 0 1rem var(--theme-spacing-md);
+    padding: 0 1rem calc(var(--theme-spacing-xl) + var(--theme-spacing-xs));
 
     @container (min-width: $mantine-breakpoint-sm) {
         padding-right: 2rem;
         padding-left: 2rem;
+
+        .primary-actions {
+            margin-inline-start: calc((60px - 48px) / 2);
+        }
     }
 }
 
