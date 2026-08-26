@@ -84,8 +84,14 @@ const AlbumDetailRoute = () => {
                 ) : (
                     <LibraryBackgroundOverlay
                         backgroundColor={background}
+                        className={styles.heroBackground}
                         headerRef={heroRef}
-                        opacity={0.88}
+                        opacity={1}
+                        style={
+                            {
+                                '--album-color-base': background,
+                            } as React.CSSProperties
+                        }
                     />
                 )}
                 <div

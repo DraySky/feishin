@@ -1,3 +1,25 @@
+.hero-background {
+    --album-color-hero-top: oklch(
+        from var(--album-color-base) clamp(0.5, calc(l + 0.1), 0.66)
+            clamp(0.055, calc(c * 1.08), 0.2) h
+    );
+    --album-color-hero-mid: oklch(
+        from var(--album-color-base) clamp(0.42, calc(l + 0.03), 0.58)
+            clamp(0.05, calc(c * 1.02), 0.19) h
+    );
+    --album-color-hero-bottom: oklch(
+        from var(--album-color-base) clamp(0.3, calc(l - 0.07), 0.46)
+            clamp(0.045, calc(c * 0.95), 0.17) h
+    );
+
+    background-image: linear-gradient(
+        to bottom,
+        var(--album-color-hero-top) 0%,
+        var(--album-color-hero-mid) 55%,
+        var(--album-color-hero-bottom) 100%
+    );
+}
+
 .background-continuation {
     position: absolute;
     left: 0;
