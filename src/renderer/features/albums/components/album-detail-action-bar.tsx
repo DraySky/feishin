@@ -56,7 +56,7 @@ export const AlbumDetailActionBar = ({
                 />
                 <ActionIcon
                     icon="mediaShuffle"
-                    iconProps={{ size: 'xl' }}
+                    iconProps={{ size: '2xl' }}
                     onClick={onShuffle}
                     radius="xl"
                     size={46}
@@ -67,7 +67,7 @@ export const AlbumDetailActionBar = ({
                     <ActionIcon
                         disabled={isMutatingFavorite}
                         icon="favorite"
-                        iconProps={{ fill: favorite ? 'primary' : undefined, size: 'xl' }}
+                        iconProps={{ fill: favorite ? 'primary' : undefined, size: '2xl' }}
                         onClick={onFavorite}
                         radius="xl"
                         size={46}
@@ -83,11 +83,11 @@ export const AlbumDetailActionBar = ({
                     tooltip={{ label: t('player.albumRadio') }}
                     variant="subtle"
                 >
-                    {isPlayerFetching ? <Spinner size="sm" /> : <Icon icon="radio" size="xl" />}
+                    {isPlayerFetching ? <Spinner size="sm" /> : <Icon icon="radio" size="2xl" />}
                 </ActionIcon>
                 <ActionIcon
                     icon="ellipsisHorizontal"
-                    iconProps={{ size: 'xl' }}
+                    iconProps={{ size: '2xl' }}
                     onClick={onMore}
                     radius="xl"
                     size={46}
