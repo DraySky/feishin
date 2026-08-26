@@ -47,18 +47,19 @@ export const AlbumDetailActionBar = ({
                 <ActionIcon
                     className={styles.playButton}
                     icon="mediaPlay"
-                    iconProps={{ size: 'lg' }}
+                    iconProps={{ size: 'xl' }}
                     onClick={onPlay}
                     radius="xl"
-                    size={48}
+                    size={60}
                     tooltip={{ label: t('player.play') }}
                     variant="transparent"
                 />
                 <ActionIcon
                     icon="mediaShuffle"
+                    iconProps={{ size: 'xl' }}
                     onClick={onShuffle}
                     radius="xl"
-                    size="xl"
+                    size={46}
                     tooltip={{ label: t('player.shuffle') }}
                     variant="subtle"
                 />
@@ -66,10 +67,10 @@ export const AlbumDetailActionBar = ({
                     <ActionIcon
                         disabled={isMutatingFavorite}
                         icon="favorite"
-                        iconProps={{ fill: favorite ? 'primary' : undefined }}
+                        iconProps={{ fill: favorite ? 'primary' : undefined, size: 'xl' }}
                         onClick={onFavorite}
                         radius="xl"
-                        size="xl"
+                        size={46}
                         tooltip={{ label: t('common.favorite') }}
                         variant="subtle"
                     />
@@ -78,7 +79,7 @@ export const AlbumDetailActionBar = ({
                     disabled={isPlayerFetching}
                     onClick={onAlbumRadio}
                     radius="xl"
-                    size="xl"
+                    size={46}
                     tooltip={{ label: t('player.albumRadio') }}
                     variant="subtle"
                 >
@@ -86,9 +87,10 @@ export const AlbumDetailActionBar = ({
                 </ActionIcon>
                 <ActionIcon
                     icon="ellipsisHorizontal"
+                    iconProps={{ size: 'xl' }}
                     onClick={onMore}
                     radius="xl"
-                    size="xl"
+                    size={46}
                     tooltip={{ label: t('action.viewMore') }}
                     variant="subtle"
                 />
