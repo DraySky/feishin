@@ -505,11 +505,6 @@ export const AlbumDetailContent = () => {
     return (
         <div className={styles.contentContainer}>
             <div className={styles.detailContainer}>
-                {comment && (
-                    <Spoiler maxHeight={75}>
-                        <Text pb="md">{replaceURLWithHTMLLinks(comment)}</Text>
-                    </Spoiler>
-                )}
                 <div className={styles.contentLayout}>
                     <div className={styles.songsColumn}>
                         {detailQuery?.data?.songs && detailQuery.data.songs.length > 0 && (
@@ -542,6 +537,13 @@ export const AlbumDetailContent = () => {
                             </Text>
                         ))}
                     </Stack>
+                )}
+                {comment && (
+                    <Spoiler maxHeight={75}>
+                        <Text isMuted size="sm">
+                            {replaceURLWithHTMLLinks(comment)}
+                        </Text>
+                    </Spoiler>
                 )}
                 <AlbumDetailCarousels data={detailQuery?.data} />
             </div>
