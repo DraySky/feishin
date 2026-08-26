@@ -1,0 +1,25 @@
+.action-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--theme-spacing-md) var(--theme-spacing-xl);
+    align-items: center;
+    width: 100%;
+    padding: 0 1rem var(--theme-spacing-md);
+
+    @container (min-width: $mantine-breakpoint-sm) {
+        padding-right: 2rem;
+        padding-left: 2rem;
+    }
+}
+
+.primary-actions {
+    flex-wrap: wrap;
+}
+
+.play-button {
+    flex-shrink: 0;
+}
+
+.rating {
+    margin-left: auto;
+}

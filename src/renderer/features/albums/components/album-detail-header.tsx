@@ -7,13 +7,11 @@ import styles from './album-detail-header.module.css';
 
 import { queryKeys } from '/@/renderer/api/query-keys';
 import { albumQueries } from '/@/renderer/features/albums/api/album-api';
+import { AlbumDetailActionBar } from '/@/renderer/features/albums/components/album-detail-action-bar';
 import { JoinedArtists } from '/@/renderer/features/albums/components/joined-artists';
 import { ContextMenuController } from '/@/renderer/features/context-menu/context-menu-controller';
 import { usePlayer } from '/@/renderer/features/player/context/player-context';
-import {
-    LibraryHeader,
-    LibraryHeaderMenu,
-} from '/@/renderer/features/shared/components/library-header';
+import { LibraryHeader } from '/@/renderer/features/shared/components/library-header';
 import { useSetFavorite } from '/@/renderer/features/shared/hooks/use-set-favorite';
 import { useSetRating } from '/@/renderer/features/shared/hooks/use-set-rating';
 import { songsQueries } from '/@/renderer/features/songs/api/songs-api';
@@ -247,7 +245,7 @@ export const AlbumDetailHeader = forwardRef<HTMLDivElement>((_props, ref) => {
     }, [detailQuery?.data, t]);
 
     return (
-        <Stack ref={ref}>
+        <Stack gap={0} ref={ref}>
             <LibraryHeader
                 item={{
                     children: headerItem,
@@ -279,18 +277,18 @@ export const AlbumDetailHeader = forwardRef<HTMLDivElement>((_props, ref) => {
                             artists={detailQuery?.data?.albumArtists || []}
                         />
                     </Group>
-                    <LibraryHeaderMenu
-                        favorite={detailQuery?.data?.userFavorite}
-                        onAlbumRadio={handleAlbumRadio}
-                        onFavorite={handleFavorite}
-                        onMore={handleMoreOptions}
-                        onPlay={(type) => handlePlay(type)}
-                        onRating={handleUpdateRating}
-                        onShuffle={() => handlePlay(Play.SHUFFLE)}
-                        rating={detailQuery?.data?.userRating || 0}
-                    />
                 </Stack>
             </LibraryHeader>
+            <AlbumDetailActionBar
+                favorite={detailQuery?.data?.userFavorite}
+                onAlbumRadio={handleAlbumRadio}
+                onFavorite={handleFavorite}
+                onMore={handleMoreOptions}
+                onPlay={() => handlePlay()}
+                onRating={handleUpdateRating}
+                onShuffle={() => handlePlay(Play.SHUFFLE)}
+                rating={detailQuery?.data?.userRating || 0}
+            />
         </Stack>
     );
 });
