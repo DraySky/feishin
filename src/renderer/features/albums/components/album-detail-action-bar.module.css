@@ -9,10 +9,6 @@
     @container (min-width: $mantine-breakpoint-sm) {
         padding-right: 2rem;
         padding-left: 2rem;
-
-        .primary-actions {
-            margin-inline-start: calc((60px - 48px) / 2);
-        }
     }
 }
 
