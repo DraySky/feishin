@@ -72,22 +72,6 @@ interface LibraryBackgroundProps {
     imageUrl: null | string;
 }
 
-interface LibraryBackgroundFadeProps {
-    className?: string;
-    headerRef: React.RefObject<HTMLDivElement | null>;
-}
-
-export const LibraryBackgroundFade = ({ className, headerRef }: LibraryBackgroundFadeProps) => {
-    const height = useHeaderHeight(headerRef);
-
-    return (
-        <div
-            className={clsx(styles.fade, className)}
-            style={{ height: height ? `${height + 64}px` : undefined }}
-        />
-    );
-};
-
 export const LibraryBackgroundImage = ({ blur, headerRef, imageUrl }: LibraryBackgroundProps) => {
     const url = imageUrl ? `url(${imageUrl})` : undefined;
     const height = useHeaderHeight(headerRef);
@@ -111,7 +95,7 @@ export const LibraryBackgroundImage = ({ blur, headerRef, imageUrl }: LibraryBac
     );
 };
 
-const useHeaderHeight = (headerRef: React.RefObject<HTMLDivElement | null>) => {
+export const useHeaderHeight = (headerRef: React.RefObject<HTMLDivElement | null>) => {
     const [headerHeight, setHeaderHeight] = useState<number>(0);
 
     useEffect(() => {

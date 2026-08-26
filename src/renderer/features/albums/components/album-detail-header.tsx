@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { forwardRef, Fragment, useMemo } from 'react';
+import { forwardRef, Fragment, Ref, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router';
 
@@ -27,7 +27,14 @@ import { Text } from '/@/shared/components/text/text';
 import { LibraryItem, ServerType } from '/@/shared/types/domain-types';
 import { Play } from '/@/shared/types/types';
 
-export const AlbumDetailHeader = forwardRef<HTMLDivElement>((_props, ref) => {
+interface AlbumDetailHeaderProps {
+    heroRef?: Ref<HTMLDivElement>;
+}
+
+const AlbumDetailHeaderBase = (
+    { heroRef }: AlbumDetailHeaderProps,
+    ref: Ref<HTMLDivElement>,
+) => {
     const { albumId } = useParams() as { albumId: string };
     const { t } = useTranslation();
     const server = useCurrentServer();
@@ -255,6 +262,7 @@ export const AlbumDetailHeader = forwardRef<HTMLDivElement>((_props, ref) => {
                     route: AppRoute.LIBRARY_ALBUMS,
                     type: LibraryItem.ALBUM,
                 }}
+                ref={heroRef}
                 title={detailQuery?.data?.name || ''}
             >
                 <Stack gap="md" w="100%">
@@ -291,4 +299,6 @@ export const AlbumDetailHeader = forwardRef<HTMLDivElement>((_props, ref) => {
             />
         </Stack>
     );
-});
+};
+
+export const AlbumDetailHeader = forwardRef(AlbumDetailHeaderBase);

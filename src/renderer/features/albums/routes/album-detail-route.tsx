@@ -11,9 +11,9 @@ import { AlbumDetailContent } from '/@/renderer/features/albums/components/album
 import { AlbumDetailHeader } from '/@/renderer/features/albums/components/album-detail-header';
 import { AnimatedPage } from '/@/renderer/features/shared/components/animated-page';
 import {
-    LibraryBackgroundFade,
     LibraryBackgroundImage,
     LibraryBackgroundOverlay,
+    useHeaderHeight,
 } from '/@/renderer/features/shared/components/library-background-overlay';
 import { LibraryContainer } from '/@/renderer/features/shared/components/library-container';
 import { LibraryHeaderBar } from '/@/renderer/features/shared/components/library-header-bar';
@@ -27,6 +27,7 @@ const ALBUM_DETAIL_BG_FALLBACK = 'var(--theme-colors-foreground-muted)';
 const AlbumDetailRoute = () => {
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const headerRef = useRef<HTMLDivElement>(null);
+    const heroRef = useRef<HTMLDivElement>(null);
     const { albumBackground, albumBackgroundBlur } = useAlbumBackground();
 
     const { albumId } = useParams() as { albumId: string };
@@ -50,6 +51,7 @@ const AlbumDetailRoute = () => {
     });
 
     const background = backgroundColor ?? ALBUM_DETAIL_BG_FALLBACK;
+    const heroHeight = useHeaderHeight(heroRef);
 
     const showBlurredImage = albumBackground;
 
@@ -76,15 +78,28 @@ const AlbumDetailRoute = () => {
                 {showBlurredImage ? (
                     <LibraryBackgroundImage
                         blur={albumBackgroundBlur}
-                        headerRef={headerRef}
+                        headerRef={heroRef}
                         imageUrl={imageUrl}
                     />
                 ) : (
-                    <LibraryBackgroundOverlay backgroundColor={background} headerRef={headerRef} />
+                    <LibraryBackgroundOverlay backgroundColor={background} headerRef={heroRef} />
                 )}
-                <LibraryBackgroundFade className={styles.backgroundFade} headerRef={headerRef} />
+                {heroHeight > 0 && (
+                    <div
+                        className={styles.backgroundContinuation}
+                        style={
+                            {
+                                '--album-detail-background': background,
+                                top: `${heroHeight}px`,
+                            } as React.CSSProperties
+                        }
+                    />
+                )}
                 <LibraryContainer>
-                    <AlbumDetailHeader ref={headerRef as React.Ref<HTMLDivElement>} />
+                    <AlbumDetailHeader
+                        heroRef={heroRef}
+                        ref={headerRef as React.Ref<HTMLDivElement>}
+                    />
                     <AlbumDetailContent />
                 </LibraryContainer>
             </NativeScrollArea>

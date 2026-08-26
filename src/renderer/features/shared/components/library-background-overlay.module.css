@@ -44,17 +44,6 @@
     backface-visibility: hidden;
 }
 
-.fade {
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 0;
-    width: 100%;
-    min-height: 200px;
-    pointer-events: none;
-    user-select: none;
-}
-
 .background-image {
     position: absolute;
     top: 0;

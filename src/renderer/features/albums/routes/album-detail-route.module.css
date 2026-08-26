@@ -1,11 +1,25 @@
-.background-fade {
+.background-continuation {
+    position: absolute;
+    left: 0;
+    z-index: 0;
+    width: 100%;
+    height: clamp(240px, 35vh, 360px);
+    pointer-events: none;
+    user-select: none;
     background: linear-gradient(
         to bottom,
-        transparent 0%,
-        transparent 38%,
-        rgb(0 0 0 / 8%) 54%,
-        rgb(0 0 0 / 20%) 70%,
-        rgb(0 0 0 / 34%) 86%,
-        rgb(0 0 0 / 42%) 100%
+        color-mix(
+                in srgb,
+                var(--album-detail-background) 30%,
+                var(--theme-colors-background)
+            )
+            0%,
+        color-mix(
+                in srgb,
+                var(--album-detail-background) 15%,
+                var(--theme-colors-background)
+            )
+            55%,
+        var(--theme-colors-background) 100%
     );
 }
