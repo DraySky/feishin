@@ -53,6 +53,11 @@ import {
 } from '/@/shared/types/domain-types';
 import { ItemListKey, ListDisplayType } from '/@/shared/types/types';
 
+const metadataPillClassNames = { root: styles.metadataPill };
+const metadataPillLinkClassNames = {
+    root: `${styles.metadataPill} ${styles.metadataPillLink}`,
+};
+
 const MetadataPillGroup = ({
     items,
     title,
@@ -70,7 +75,11 @@ const MetadataPillGroup = ({
             <div className={styles['pill-group-wrapper']}>
                 <Pill.Group>
                     {items.map((tag, index) => (
-                        <Pill key={`item-${tag.id}-${index}`} size="md">
+                        <Pill
+                            classNames={metadataPillClassNames}
+                            key={`item-${tag.id}-${index}`}
+                            size="md"
+                        >
                             {tag.value}
                         </Pill>
                     ))}
@@ -212,6 +221,7 @@ const AlbumMetadataTags = ({ album }: AlbumMetadataTagsProps) => {
                             {recordLabels.map((recordLabel) =>
                                 recordLabel.url ? (
                                     <PillLink
+                                        classNames={metadataPillLinkClassNames}
                                         key={`recordlabel-${recordLabel.id}`}
                                         size="md"
                                         to={recordLabel.url}
@@ -219,7 +229,11 @@ const AlbumMetadataTags = ({ album }: AlbumMetadataTagsProps) => {
                                         {recordLabel.label}
                                     </PillLink>
                                 ) : (
-                                    <Pill key={`recordlabel-${recordLabel.id}`} size="md">
+                                    <Pill
+                                        classNames={metadataPillClassNames}
+                                        key={`recordlabel-${recordLabel.id}`}
+                                        size="md"
+                                    >
                                         {recordLabel.label}
                                     </Pill>
                                 ),
@@ -240,11 +254,20 @@ const AlbumMetadataTags = ({ album }: AlbumMetadataTagsProps) => {
                         <Pill.Group>
                             {groupingItems.map((item) =>
                                 item.url ? (
-                                    <PillLink key={`grouping-${item.id}`} size="md" to={item.url}>
+                                    <PillLink
+                                        classNames={metadataPillLinkClassNames}
+                                        key={`grouping-${item.id}`}
+                                        size="md"
+                                        to={item.url}
+                                    >
                                         {item.label}
                                     </PillLink>
                                 ) : (
-                                    <Pill key={`grouping-${item.id}`} size="md">
+                                    <Pill
+                                        classNames={metadataPillClassNames}
+                                        key={`grouping-${item.id}`}
+                                        size="md"
+                                    >
                                         {item.label}
                                     </Pill>
                                 ),
@@ -276,6 +299,7 @@ const AlbumMetadataGenres = ({ genres }: AlbumMetadataGenresProps) => {
             <Pill.Group>
                 {genres.map((genre) => (
                     <PillLink
+                        classNames={metadataPillLinkClassNames}
                         key={`genre-${genre.id}`}
                         size="md"
                         to={generatePath(AppRoute.LIBRARY_GENRES_DETAIL, {

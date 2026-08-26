@@ -74,6 +74,27 @@
     }
 }
 
+.metadata-pill {
+    background-color: rgb(255 255 255 / 6%);
+    border: 1px solid rgb(255 255 255 / 10%);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 8%);
+    backdrop-filter: blur(8px) saturate(1.2);
+    transition:
+        background-color 160ms ease,
+        border-color 160ms ease;
+}
+
+.metadata-pill:hover {
+    background-color: rgb(255 255 255 / 6%);
+    border-color: rgb(255 255 255 / 10%);
+}
+
+.metadata-pill-link:hover,
+.metadata-pill-link:focus-visible {
+    background-color: rgb(255 255 255 / 11%);
+    border-color: rgb(255 255 255 / 16%);
+}
+
 @container (min-width: $mantine-breakpoint-sm) {
     .metadata-column {
         flex-direction: row;

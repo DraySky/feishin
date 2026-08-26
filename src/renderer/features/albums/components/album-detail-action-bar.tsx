@@ -55,6 +55,7 @@ export const AlbumDetailActionBar = ({
                     variant="transparent"
                 />
                 <ActionIcon
+                    className={styles.secondaryAction}
                     icon="mediaShuffle"
                     iconProps={{ size: '2xl' }}
                     onClick={onShuffle}
@@ -65,6 +66,7 @@ export const AlbumDetailActionBar = ({
                 />
                 {onFavorite && (
                     <ActionIcon
+                        className={styles.secondaryAction}
                         disabled={isMutatingFavorite}
                         icon="favorite"
                         iconProps={{ fill: favorite ? 'primary' : undefined, size: '2xl' }}
@@ -76,6 +78,7 @@ export const AlbumDetailActionBar = ({
                     />
                 )}
                 <ActionIcon
+                    className={styles.secondaryAction}
                     disabled={isPlayerFetching}
                     onClick={onAlbumRadio}
                     radius="xl"
@@ -86,6 +89,7 @@ export const AlbumDetailActionBar = ({
                     {isPlayerFetching ? <Spinner size="sm" /> : <Icon icon="radio" size="2xl" />}
                 </ActionIcon>
                 <ActionIcon
+                    className={styles.secondaryAction}
                     icon="ellipsisHorizontal"
                     iconProps={{ size: '2xl' }}
                     onClick={onMore}
