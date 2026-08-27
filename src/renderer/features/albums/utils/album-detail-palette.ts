@@ -10,6 +10,7 @@ export interface AlbumDetailPalette {
     continuationFaint: AlbumDetailTone;
     continuationMid: AlbumDetailTone;
     continuationNear: string;
+    continuationSoft: string;
     continuationStart: AlbumDetailTone;
     continuationUltraNear: string;
     heroBottom: AlbumDetailTone;
@@ -87,6 +88,7 @@ export const createAlbumDetailPalette = (base: string): AlbumDetailPalette => {
             continuationFaint: fallback,
             continuationMid: fallback,
             continuationNear: base,
+            continuationSoft: base,
             continuationStart: fallback,
             continuationUltraNear: base,
             heroBottom: fallback,
@@ -140,11 +142,14 @@ export const createAlbumDetailPalette = (base: string): AlbumDetailPalette => {
         continuationFaint,
         continuationMid,
         continuationNear:
-            `color-mix(in oklab, ${continuationFaint.css} 20%, ` +
+            `color-mix(in oklab, ${continuationFaint.css} 18%, ` +
+            'var(--theme-colors-background))',
+        continuationSoft:
+            `color-mix(in oklab, ${continuationFaint.css} 45%, ` +
             'var(--theme-colors-background))',
         continuationStart,
         continuationUltraNear:
-            `color-mix(in oklab, ${continuationFaint.css} 7%, ` +
+            `color-mix(in oklab, ${continuationFaint.css} 5%, ` +
             'var(--theme-colors-background))',
         heroBottom,
         heroMid,
