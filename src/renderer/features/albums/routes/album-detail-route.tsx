@@ -88,17 +88,17 @@ const AlbumDetailRoute = () => {
     const primaryRatio = gradientHeight > 0 ? continuationHeight / gradientHeight : 0;
     const tailRatio = 1 - primaryRatio;
     const gradientStops = {
-        fade12: toGradientStop(primaryRatio + tailRatio * 0.38),
-        fade20: toGradientStop(primaryRatio + tailRatio * 0.18),
-        fade3: toGradientStop(primaryRatio + tailRatio * 0.78),
-        fade30: toGradientStop(primaryRatio),
-        fade42: toGradientStop(primaryRatio * 0.9),
-        fade56: toGradientStop(primaryRatio * 0.81),
-        fade7: toGradientStop(primaryRatio + tailRatio * 0.58),
-        fade72: toGradientStop(primaryRatio * 0.73),
-        fade88: toGradientStop(primaryRatio * 0.65),
-        faint: toGradientStop(primaryRatio * 0.55),
-        mid: toGradientStop(primaryRatio * 0.35),
+        fade12: toGradientStop(primaryRatio + tailRatio * 0.3),
+        fade20: toGradientStop(primaryRatio + tailRatio * 0.12),
+        fade3: toGradientStop(primaryRatio + tailRatio * 0.75),
+        fade30: toGradientStop(primaryRatio * 0.94),
+        fade42: toGradientStop(primaryRatio * 0.83),
+        fade56: toGradientStop(primaryRatio * 0.74),
+        fade7: toGradientStop(primaryRatio + tailRatio * 0.52),
+        fade72: toGradientStop(primaryRatio * 0.66),
+        fade88: toGradientStop(primaryRatio * 0.58),
+        faint: toGradientStop(primaryRatio * 0.49),
+        mid: toGradientStop(primaryRatio * 0.32),
     };
 
     const showBlurredImage = albumBackground;
