@@ -32,25 +32,17 @@
     background: linear-gradient(
         to bottom,
         var(--album-color-continuation-start) 0%,
-        var(--album-color-continuation-mid) 45%,
-        var(--album-color-continuation-faint) 78%,
-        var(--album-color-continuation-ultra-near) 100%
-    );
-}
-
-.background-tail {
-    position: absolute;
-    left: 0;
-    z-index: 0;
-    width: 100%;
-    pointer-events: none;
-    user-select: none;
-    background: linear-gradient(
-        to bottom,
-        var(--album-color-continuation-ultra-near) 0%,
-        var(--album-color-continuation-whisper) 32%,
-        var(--album-color-continuation-trace) 62%,
-        var(--album-color-continuation-barely) 84%,
+        var(--album-color-continuation-mid) var(--album-gradient-mid-stop),
+        var(--album-color-continuation-faint) var(--album-gradient-faint-stop),
+        var(--album-color-continuation-fade-88) var(--album-gradient-fade-88-stop),
+        var(--album-color-continuation-fade-72) var(--album-gradient-fade-72-stop),
+        var(--album-color-continuation-fade-56) var(--album-gradient-fade-56-stop),
+        var(--album-color-continuation-fade-42) var(--album-gradient-fade-42-stop),
+        var(--album-color-continuation-fade-30) var(--album-gradient-fade-30-stop),
+        var(--album-color-continuation-fade-20) var(--album-gradient-fade-20-stop),
+        var(--album-color-continuation-fade-12) var(--album-gradient-fade-12-stop),
+        var(--album-color-continuation-fade-7) var(--album-gradient-fade-7-stop),
+        var(--album-color-continuation-fade-3) var(--album-gradient-fade-3-stop),
         transparent 100%
     );
 }

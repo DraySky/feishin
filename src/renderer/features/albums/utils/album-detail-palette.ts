@@ -7,13 +7,18 @@ export interface AlbumDetailTone {
 
 export interface AlbumDetailPalette {
     base: string;
-    continuationBarely: string;
+    continuationFade12: string;
+    continuationFade20: string;
+    continuationFade3: string;
+    continuationFade30: string;
+    continuationFade42: string;
+    continuationFade56: string;
+    continuationFade7: string;
+    continuationFade72: string;
+    continuationFade88: string;
     continuationFaint: AlbumDetailTone;
     continuationMid: AlbumDetailTone;
     continuationStart: AlbumDetailTone;
-    continuationTrace: string;
-    continuationUltraNear: string;
-    continuationWhisper: string;
     heroBottom: AlbumDetailTone;
     heroMid: AlbumDetailTone;
     heroTop: AlbumDetailTone;
@@ -38,6 +43,9 @@ const createTone = (lightness: number, chroma: number, hue: number): AlbumDetail
     hue,
     lightness,
 });
+
+const createTransparentTone = (tone: AlbumDetailTone, amount: number) =>
+    `color-mix(in oklab, ${tone.css} ${amount}%, transparent)`;
 
 const parseRgb = (color: string) => {
     const channels = color.match(/^rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)/i);
@@ -86,13 +94,18 @@ export const createAlbumDetailPalette = (base: string): AlbumDetailPalette => {
         const fallback = { chroma: 0, css: base, hue: 0, lightness: 0 };
         return {
             base,
-            continuationBarely: base,
+            continuationFade12: createTransparentTone(fallback, 12),
+            continuationFade20: createTransparentTone(fallback, 20),
+            continuationFade3: createTransparentTone(fallback, 3),
+            continuationFade30: createTransparentTone(fallback, 30),
+            continuationFade42: createTransparentTone(fallback, 42),
+            continuationFade56: createTransparentTone(fallback, 56),
+            continuationFade7: createTransparentTone(fallback, 7),
+            continuationFade72: createTransparentTone(fallback, 72),
+            continuationFade88: createTransparentTone(fallback, 88),
             continuationFaint: fallback,
             continuationMid: fallback,
             continuationStart: fallback,
-            continuationTrace: base,
-            continuationUltraNear: base,
-            continuationWhisper: base,
             heroBottom: fallback,
             heroMid: fallback,
             heroTop: fallback,
@@ -141,17 +154,18 @@ export const createAlbumDetailPalette = (base: string): AlbumDetailPalette => {
 
     return {
         base,
-        continuationBarely:
-            `color-mix(in oklab, ${continuationStart.css} 2%, transparent)`,
+        continuationFade12: createTransparentTone(continuationFaint, 12),
+        continuationFade20: createTransparentTone(continuationFaint, 20),
+        continuationFade3: createTransparentTone(continuationFaint, 3),
+        continuationFade30: createTransparentTone(continuationFaint, 30),
+        continuationFade42: createTransparentTone(continuationFaint, 42),
+        continuationFade56: createTransparentTone(continuationFaint, 56),
+        continuationFade7: createTransparentTone(continuationFaint, 7),
+        continuationFade72: createTransparentTone(continuationFaint, 72),
+        continuationFade88: createTransparentTone(continuationFaint, 88),
         continuationFaint,
         continuationMid,
         continuationStart,
-        continuationTrace:
-            `color-mix(in oklab, ${continuationStart.css} 5%, transparent)`,
-        continuationUltraNear:
-            `color-mix(in oklab, ${continuationStart.css} 18%, transparent)`,
-        continuationWhisper:
-            `color-mix(in oklab, ${continuationStart.css} 10%, transparent)`,
         heroBottom,
         heroMid,
         heroTop,

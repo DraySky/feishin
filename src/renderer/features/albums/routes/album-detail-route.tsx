@@ -29,6 +29,7 @@ import { ItemListKey } from '/@/shared/types/types';
 const ALBUM_DETAIL_BG_FALLBACK = 'var(--theme-colors-foreground-muted)';
 const ALBUM_DETAIL_TABLE_HEADER_HEIGHT = 40;
 const ALBUM_DETAIL_TAIL_ROWS = 5;
+const toGradientStop = (ratio: number) => `${ratio * 100}%`;
 
 const AlbumDetailRoute = () => {
     const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -83,6 +84,22 @@ const AlbumDetailRoute = () => {
                 ? TableItemSize.LARGE
                 : TableItemSize.DEFAULT;
     const tailHeight = rowHeight * ALBUM_DETAIL_TAIL_ROWS;
+    const gradientHeight = continuationHeight + tailHeight;
+    const primaryRatio = gradientHeight > 0 ? continuationHeight / gradientHeight : 0;
+    const tailRatio = 1 - primaryRatio;
+    const gradientStops = {
+        fade12: toGradientStop(primaryRatio + tailRatio * 0.38),
+        fade20: toGradientStop(primaryRatio + tailRatio * 0.18),
+        fade3: toGradientStop(primaryRatio + tailRatio * 0.78),
+        fade30: toGradientStop(primaryRatio),
+        fade42: toGradientStop(primaryRatio * 0.9),
+        fade56: toGradientStop(primaryRatio * 0.81),
+        fade7: toGradientStop(primaryRatio + tailRatio * 0.58),
+        fade72: toGradientStop(primaryRatio * 0.73),
+        fade88: toGradientStop(primaryRatio * 0.65),
+        faint: toGradientStop(primaryRatio * 0.55),
+        mid: toGradientStop(primaryRatio * 0.35),
+    };
 
     const showBlurredImage = albumBackground;
 
@@ -111,17 +128,32 @@ const AlbumDetailRoute = () => {
                     style={
                         {
                             '--album-color-base': palette.base,
-                            '--album-color-continuation-barely': palette.continuationBarely,
+                            '--album-color-continuation-fade-12': palette.continuationFade12,
+                            '--album-color-continuation-fade-20': palette.continuationFade20,
+                            '--album-color-continuation-fade-3': palette.continuationFade3,
+                            '--album-color-continuation-fade-30': palette.continuationFade30,
+                            '--album-color-continuation-fade-42': palette.continuationFade42,
+                            '--album-color-continuation-fade-56': palette.continuationFade56,
+                            '--album-color-continuation-fade-7': palette.continuationFade7,
+                            '--album-color-continuation-fade-72': palette.continuationFade72,
+                            '--album-color-continuation-fade-88': palette.continuationFade88,
                             '--album-color-continuation-faint': palette.continuationFaint.css,
                             '--album-color-continuation-mid': palette.continuationMid.css,
                             '--album-color-continuation-start': palette.continuationStart.css,
-                            '--album-color-continuation-trace': palette.continuationTrace,
-                            '--album-color-continuation-ultra-near':
-                                palette.continuationUltraNear,
-                            '--album-color-continuation-whisper': palette.continuationWhisper,
                             '--album-color-hero-bottom': palette.heroBottom.css,
                             '--album-color-hero-mid': palette.heroMid.css,
                             '--album-color-hero-top': palette.heroTop.css,
+                            '--album-gradient-fade-12-stop': gradientStops.fade12,
+                            '--album-gradient-fade-20-stop': gradientStops.fade20,
+                            '--album-gradient-fade-3-stop': gradientStops.fade3,
+                            '--album-gradient-fade-30-stop': gradientStops.fade30,
+                            '--album-gradient-fade-42-stop': gradientStops.fade42,
+                            '--album-gradient-fade-56-stop': gradientStops.fade56,
+                            '--album-gradient-fade-7-stop': gradientStops.fade7,
+                            '--album-gradient-fade-72-stop': gradientStops.fade72,
+                            '--album-gradient-fade-88-stop': gradientStops.fade88,
+                            '--album-gradient-faint-stop': gradientStops.faint,
+                            '--album-gradient-mid-stop': gradientStops.mid,
                         } as React.CSSProperties
                     }
                 >
@@ -146,21 +178,12 @@ const AlbumDetailRoute = () => {
                         className={styles.backgroundContinuation}
                         style={
                             {
-                                height: `${continuationHeight}px`,
+                                height: `${gradientHeight}px`,
                                 top: heroHeight > 0 ? `${heroHeight}px` : '0px',
                                 visibility:
                                     heroHeight > 0 && albumHeaderHeight > 0 ? 'visible' : 'hidden',
                             } as React.CSSProperties
                         }
-                    />
-                    <div
-                        className={styles.backgroundTail}
-                        style={{
-                            height: `${tailHeight}px`,
-                            top: `${heroHeight + continuationHeight}px`,
-                            visibility:
-                                heroHeight > 0 && albumHeaderHeight > 0 ? 'visible' : 'hidden',
-                        }}
                     />
                     <div className={styles.foreground}>
                         <LibraryContainer>
