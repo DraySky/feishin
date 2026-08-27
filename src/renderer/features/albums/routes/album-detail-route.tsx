@@ -28,7 +28,7 @@ import { ItemListKey } from '/@/shared/types/types';
 
 const ALBUM_DETAIL_BG_FALLBACK = 'var(--theme-colors-foreground-muted)';
 const ALBUM_DETAIL_TABLE_HEADER_HEIGHT = 40;
-const ALBUM_DETAIL_TAIL_ROWS = 3.5;
+const ALBUM_DETAIL_TAIL_ROWS = 5;
 
 const AlbumDetailRoute = () => {
     const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -111,6 +111,7 @@ const AlbumDetailRoute = () => {
                     style={
                         {
                             '--album-color-base': palette.base,
+                            '--album-color-continuation-barely': palette.continuationBarely,
                             '--album-color-continuation-faint': palette.continuationFaint.css,
                             '--album-color-continuation-mid': palette.continuationMid.css,
                             '--album-color-continuation-near': palette.continuationNear,

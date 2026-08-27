@@ -50,8 +50,9 @@
     background: linear-gradient(
         to bottom,
         var(--album-color-continuation-ultra-near) 0%,
-        var(--album-color-continuation-whisper) 45%,
-        var(--album-color-continuation-trace) 75%,
+        var(--album-color-continuation-whisper) 30%,
+        var(--album-color-continuation-trace) 58%,
+        var(--album-color-continuation-barely) 82%,
         var(--theme-colors-background) 100%
     );
 }

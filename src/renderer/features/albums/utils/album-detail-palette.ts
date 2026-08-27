@@ -7,6 +7,7 @@ export interface AlbumDetailTone {
 
 export interface AlbumDetailPalette {
     base: string;
+    continuationBarely: string;
     continuationFaint: AlbumDetailTone;
     continuationMid: AlbumDetailTone;
     continuationNear: string;
@@ -87,6 +88,7 @@ export const createAlbumDetailPalette = (base: string): AlbumDetailPalette => {
         const fallback = { chroma: 0, css: base, hue: 0, lightness: 0 };
         return {
             base,
+            continuationBarely: base,
             continuationFaint: fallback,
             continuationMid: fallback,
             continuationNear: base,
@@ -143,6 +145,9 @@ export const createAlbumDetailPalette = (base: string): AlbumDetailPalette => {
 
     return {
         base,
+        continuationBarely:
+            `color-mix(in oklab, ${continuationFaint.css} 1.5%, ` +
+            'var(--theme-colors-background))',
         continuationFaint,
         continuationMid,
         continuationNear:
@@ -153,13 +158,13 @@ export const createAlbumDetailPalette = (base: string): AlbumDetailPalette => {
             'var(--theme-colors-background))',
         continuationStart,
         continuationTrace:
-            `color-mix(in oklab, ${continuationFaint.css} 1%, ` +
+            `color-mix(in oklab, ${continuationFaint.css} 4%, ` +
             'var(--theme-colors-background))',
         continuationUltraNear:
-            `color-mix(in oklab, ${continuationFaint.css} 5%, ` +
+            `color-mix(in oklab, ${continuationFaint.css} 13%, ` +
             'var(--theme-colors-background))',
         continuationWhisper:
-            `color-mix(in oklab, ${continuationFaint.css} 2.5%, ` +
+            `color-mix(in oklab, ${continuationFaint.css} 8%, ` +
             'var(--theme-colors-background))',
         heroBottom,
         heroMid,
