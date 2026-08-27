@@ -87,7 +87,10 @@ const AlbumDetailRoute = () => {
                 }}
                 ref={scrollAreaRef}
             >
-                <div className={styles.routeSurface}>
+                <div
+                    className={styles.routeSurface}
+                    style={{ '--album-color-base': background } as React.CSSProperties}
+                >
                     {showBlurredImage ? (
                         <LibraryBackgroundImage
                             blur={albumBackgroundBlur}
@@ -99,7 +102,6 @@ const AlbumDetailRoute = () => {
                             className={styles.heroBackground}
                             style={
                                 {
-                                    '--album-color-base': background,
                                     height: heroHeight > 0 ? `${heroHeight}px` : '0px',
                                     visibility: heroHeight > 0 ? 'visible' : 'hidden',
                                 } as React.CSSProperties
@@ -110,7 +112,6 @@ const AlbumDetailRoute = () => {
                         className={styles.backgroundContinuation}
                         style={
                             {
-                                '--album-detail-background': background,
                                 height: `${continuationHeight}px`,
                                 top: heroHeight > 0 ? `${heroHeight}px` : '0px',
                                 visibility:

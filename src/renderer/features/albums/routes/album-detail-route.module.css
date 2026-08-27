@@ -1,4 +1,81 @@
 .route-surface {
+    --album-color-hero-top: oklch(
+        from var(--album-color-base)
+            clamp(
+                0.5,
+                calc(
+                    l +
+                        clamp(
+                            0.02,
+                            calc(
+                                0.1 - max(0, l - 0.55) * 0.8 - max(0, c - 0.16) * 0.4
+                            ),
+                            0.1
+                        )
+                ),
+                0.66
+            )
+            clamp(
+                0.055,
+                calc(
+                    c *
+                        clamp(
+                            0.72,
+                            calc(
+                                1.08 - max(0, c - 0.16) * 3 - max(0, l - 0.6) * 0.6
+                            ),
+                            1.08
+                        )
+                ),
+                0.2
+            )
+            h
+    );
+    --album-color-hero-mid: oklch(
+        from var(--album-color-base)
+            clamp(
+                0.42,
+                calc(l + clamp(0, calc(0.03 - max(0, l - 0.58) * 0.3), 0.03)),
+                0.58
+            )
+            clamp(
+                0.05,
+                calc(
+                    c *
+                        clamp(
+                            0.72,
+                            calc(
+                                1.02 - max(0, c - 0.16) * 2.5 - max(0, l - 0.6) * 0.5
+                            ),
+                            1.02
+                        )
+                ),
+                0.19
+            )
+            h
+    );
+    --album-color-hero-bottom: oklch(
+        from var(--album-color-base) clamp(0.3, calc(l - 0.07), 0.46)
+            clamp(
+                0.045,
+                calc(c * clamp(0.7, calc(0.95 - max(0, c - 0.16) * 2.5), 0.95)),
+                0.17
+            )
+            h
+    );
+    --album-color-continuation-start: oklch(
+        from var(--album-color-hero-bottom) max(0.24, calc(l - 0.055))
+            clamp(0.035, calc(c * 0.88), 0.15) h
+    );
+    --album-color-continuation-mid: oklch(
+        from var(--album-color-hero-bottom) max(0.18, calc(l - 0.12))
+            clamp(0.025, calc(c * 0.68), 0.11) h
+    );
+    --album-color-continuation-faint: oklch(
+        from var(--album-color-hero-bottom) max(0.14, calc(l - 0.17))
+            clamp(0.015, calc(c * 0.45), 0.075) h
+    );
+
     position: relative;
     min-height: 100%;
     background: var(--theme-colors-background);
@@ -6,19 +83,6 @@
 }
 
 .hero-background {
-    --album-color-hero-top: oklch(
-        from var(--album-color-base) clamp(0.5, calc(l + 0.1), 0.66)
-            clamp(0.055, calc(c * 1.08), 0.2) h
-    );
-    --album-color-hero-mid: oklch(
-        from var(--album-color-base) clamp(0.42, calc(l + 0.03), 0.58)
-            clamp(0.05, calc(c * 1.02), 0.19) h
-    );
-    --album-color-hero-bottom: oklch(
-        from var(--album-color-base) clamp(0.3, calc(l - 0.07), 0.46)
-            clamp(0.045, calc(c * 0.95), 0.17) h
-    );
-
     position: absolute;
     top: 0;
     left: 0;
@@ -44,24 +108,9 @@
     user-select: none;
     background: linear-gradient(
         to bottom,
-        color-mix(
-                in srgb,
-                var(--album-detail-background) 58%,
-                var(--theme-colors-background)
-            )
-            0%,
-        color-mix(
-                in srgb,
-                var(--album-detail-background) 34%,
-                var(--theme-colors-background)
-            )
-            38%,
-        color-mix(
-                in srgb,
-                var(--album-detail-background) 16%,
-                var(--theme-colors-background)
-            )
-            72%,
+        var(--album-color-continuation-start) 0%,
+        var(--album-color-continuation-mid) 38%,
+        var(--album-color-continuation-faint) 72%,
         var(--theme-colors-background) 100%
     );
 }
