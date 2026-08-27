@@ -146,8 +146,7 @@ export const createAlbumDetailPalette = (base: string): AlbumDetailPalette => {
     return {
         base,
         continuationBarely:
-            `color-mix(in oklab, ${continuationFaint.css} 1.5%, ` +
-            'var(--theme-colors-background))',
+            `color-mix(in oklab, ${continuationStart.css} 2%, transparent)`,
         continuationFaint,
         continuationMid,
         continuationNear:
@@ -158,14 +157,11 @@ export const createAlbumDetailPalette = (base: string): AlbumDetailPalette => {
             'var(--theme-colors-background))',
         continuationStart,
         continuationTrace:
-            `color-mix(in oklab, ${continuationFaint.css} 4%, ` +
-            'var(--theme-colors-background))',
+            `color-mix(in oklab, ${continuationStart.css} 5%, transparent)`,
         continuationUltraNear:
-            `color-mix(in oklab, ${continuationFaint.css} 13%, ` +
-            'var(--theme-colors-background))',
+            `color-mix(in oklab, ${continuationStart.css} 18%, transparent)`,
         continuationWhisper:
-            `color-mix(in oklab, ${continuationFaint.css} 8%, ` +
-            'var(--theme-colors-background))',
+            `color-mix(in oklab, ${continuationStart.css} 10%, transparent)`,
         heroBottom,
         heroMid,
         heroTop,
