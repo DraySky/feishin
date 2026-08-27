@@ -9,6 +9,7 @@ import { NativeScrollArea } from '/@/renderer/components/native-scroll-area/nati
 import { albumQueries } from '/@/renderer/features/albums/api/album-api';
 import { AlbumDetailContent } from '/@/renderer/features/albums/components/album-detail-content';
 import { AlbumDetailHeader } from '/@/renderer/features/albums/components/album-detail-header';
+import { useAlbumDetailSeed } from '/@/renderer/features/albums/hooks/use-album-detail-seed';
 import { createAlbumDetailPalette } from '/@/renderer/features/albums/utils/album-detail-palette';
 import { AnimatedPage } from '/@/renderer/features/shared/components/animated-page';
 import {
@@ -56,7 +57,9 @@ const AlbumDetailRoute = () => {
         srcLoaded: true,
     });
 
-    const background = backgroundColor ?? ALBUM_DETAIL_BG_FALLBACK;
+    const seedSelection = useAlbumDetailSeed({ dominant: backgroundColor, src: imageUrl });
+    const background =
+        seedSelection?.selected.rgb ?? backgroundColor ?? ALBUM_DETAIL_BG_FALLBACK;
     const palette = useMemo(() => createAlbumDetailPalette(background), [background]);
     const albumHeaderHeight = useHeaderHeight(headerRef);
     const heroHeight = useHeaderHeight(heroRef);
@@ -73,7 +76,7 @@ const AlbumDetailRoute = () => {
         <AnimatedPage key={`album-detail-${albumId}`}>
             <NativeScrollArea
                 pageHeaderProps={{
-                    backgroundColor: backgroundColor ?? ALBUM_DETAIL_BG_FALLBACK,
+                    backgroundColor: background,
                     children: (
                         <LibraryHeaderBar>
                             <LibraryHeaderBar.PlayButton
@@ -98,6 +101,8 @@ const AlbumDetailRoute = () => {
                             '--album-color-continuation-mid': palette.continuationMid.css,
                             '--album-color-continuation-near': palette.continuationNear,
                             '--album-color-continuation-start': palette.continuationStart.css,
+                            '--album-color-continuation-ultra-near':
+                                palette.continuationUltraNear,
                             '--album-color-hero-bottom': palette.heroBottom.css,
                             '--album-color-hero-mid': palette.heroMid.css,
                             '--album-color-hero-top': palette.heroTop.css,

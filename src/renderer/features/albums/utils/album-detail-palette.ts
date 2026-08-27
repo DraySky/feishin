@@ -11,6 +11,7 @@ export interface AlbumDetailPalette {
     continuationMid: AlbumDetailTone;
     continuationNear: string;
     continuationStart: AlbumDetailTone;
+    continuationUltraNear: string;
     heroBottom: AlbumDetailTone;
     heroMid: AlbumDetailTone;
     heroTop: AlbumDetailTone;
@@ -44,7 +45,7 @@ const parseRgb = (color: string) => {
         : null;
 };
 
-const rgbToOklch = (color: string): AlbumDetailTone | null => {
+export const parseAlbumDetailColor = (color: string): AlbumDetailTone | null => {
     const rgb = parseRgb(color);
 
     if (!rgb) {
@@ -77,7 +78,7 @@ const rgbToOklch = (color: string): AlbumDetailTone | null => {
 };
 
 export const createAlbumDetailPalette = (base: string): AlbumDetailPalette => {
-    const seed = rgbToOklch(base);
+    const seed = parseAlbumDetailColor(base);
 
     if (!seed) {
         const fallback = { chroma: 0, css: base, hue: 0, lightness: 0 };
@@ -87,6 +88,7 @@ export const createAlbumDetailPalette = (base: string): AlbumDetailPalette => {
             continuationMid: fallback,
             continuationNear: base,
             continuationStart: fallback,
+            continuationUltraNear: base,
             heroBottom: fallback,
             heroMid: fallback,
             heroTop: fallback,
@@ -141,6 +143,9 @@ export const createAlbumDetailPalette = (base: string): AlbumDetailPalette => {
             `color-mix(in oklab, ${continuationFaint.css} 20%, ` +
             'var(--theme-colors-background))',
         continuationStart,
+        continuationUltraNear:
+            `color-mix(in oklab, ${continuationFaint.css} 7%, ` +
+            'var(--theme-colors-background))',
         heroBottom,
         heroMid,
         heroTop,
