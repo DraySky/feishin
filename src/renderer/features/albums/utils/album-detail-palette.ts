@@ -7,6 +7,7 @@ export interface AlbumDetailTone {
 
 export interface AlbumDetailPalette {
     base: string;
+    continuationAmbient: AlbumDetailTone;
     continuationFade12: string;
     continuationFade20: string;
     continuationFade3: string;
@@ -94,6 +95,7 @@ export const createAlbumDetailPalette = (base: string): AlbumDetailPalette => {
         const fallback = { chroma: 0, css: base, hue: 0, lightness: 0 };
         return {
             base,
+            continuationAmbient: fallback,
             continuationFade12: createTransparentTone(fallback, 12),
             continuationFade20: createTransparentTone(fallback, 20),
             continuationFade3: createTransparentTone(fallback, 3),
@@ -151,18 +153,24 @@ export const createAlbumDetailPalette = (base: string): AlbumDetailPalette => {
         clamp(heroBottom.chroma * 0.62, 0.025, 0.1),
         seed.hue,
     );
+    const continuationAmbient = createTone(
+        Math.max(0.19, heroBottom.lightness - 0.13),
+        clamp(heroBottom.chroma * 0.55, 0.02, 0.09),
+        seed.hue,
+    );
 
     return {
         base,
-        continuationFade12: createTransparentTone(continuationFaint, 12),
-        continuationFade20: createTransparentTone(continuationFaint, 20),
-        continuationFade3: createTransparentTone(continuationFaint, 3),
-        continuationFade30: createTransparentTone(continuationFaint, 30),
-        continuationFade42: createTransparentTone(continuationFaint, 42),
-        continuationFade56: createTransparentTone(continuationFaint, 56),
-        continuationFade7: createTransparentTone(continuationFaint, 7),
-        continuationFade72: createTransparentTone(continuationFaint, 72),
-        continuationFade88: createTransparentTone(continuationFaint, 88),
+        continuationAmbient,
+        continuationFade12: createTransparentTone(continuationAmbient, 12),
+        continuationFade20: createTransparentTone(continuationAmbient, 20),
+        continuationFade3: createTransparentTone(continuationAmbient, 3),
+        continuationFade30: createTransparentTone(continuationAmbient, 30),
+        continuationFade42: createTransparentTone(continuationAmbient, 42),
+        continuationFade56: createTransparentTone(continuationAmbient, 56),
+        continuationFade7: createTransparentTone(continuationAmbient, 7),
+        continuationFade72: createTransparentTone(continuationAmbient, 72),
+        continuationFade88: createTransparentTone(continuationAmbient, 88),
         continuationFaint,
         continuationMid,
         continuationStart,
