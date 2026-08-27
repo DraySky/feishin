@@ -1,5 +1,5 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import { useParams } from 'react-router';
 
 import styles from './album-detail-route.module.css';
@@ -9,6 +9,7 @@ import { NativeScrollArea } from '/@/renderer/components/native-scroll-area/nati
 import { albumQueries } from '/@/renderer/features/albums/api/album-api';
 import { AlbumDetailContent } from '/@/renderer/features/albums/components/album-detail-content';
 import { AlbumDetailHeader } from '/@/renderer/features/albums/components/album-detail-header';
+import { createAlbumDetailPalette } from '/@/renderer/features/albums/utils/album-detail-palette';
 import { AnimatedPage } from '/@/renderer/features/shared/components/animated-page';
 import {
     LibraryBackgroundImage,
@@ -56,6 +57,7 @@ const AlbumDetailRoute = () => {
     });
 
     const background = backgroundColor ?? ALBUM_DETAIL_BG_FALLBACK;
+    const palette = useMemo(() => createAlbumDetailPalette(background), [background]);
     const albumHeaderHeight = useHeaderHeight(headerRef);
     const heroHeight = useHeaderHeight(heroRef);
     const continuationHeight = Math.max(
@@ -89,7 +91,18 @@ const AlbumDetailRoute = () => {
             >
                 <div
                     className={styles.routeSurface}
-                    style={{ '--album-color-base': background } as React.CSSProperties}
+                    style={
+                        {
+                            '--album-color-base': palette.base,
+                            '--album-color-continuation-faint': palette.continuationFaint.css,
+                            '--album-color-continuation-mid': palette.continuationMid.css,
+                            '--album-color-continuation-near': palette.continuationNear,
+                            '--album-color-continuation-start': palette.continuationStart.css,
+                            '--album-color-hero-bottom': palette.heroBottom.css,
+                            '--album-color-hero-mid': palette.heroMid.css,
+                            '--album-color-hero-top': palette.heroTop.css,
+                        } as React.CSSProperties
+                    }
                 >
                     {showBlurredImage ? (
                         <LibraryBackgroundImage
