@@ -32,10 +32,8 @@
     background: linear-gradient(
         to bottom,
         var(--album-color-continuation-start) 0%,
-        var(--album-color-continuation-mid) 36%,
-        var(--album-color-continuation-faint) 66%,
-        var(--album-color-continuation-soft) 80%,
-        var(--album-color-continuation-near) 90%,
+        var(--album-color-continuation-mid) 45%,
+        var(--album-color-continuation-faint) 78%,
         var(--album-color-continuation-ultra-near) 100%
     );
 }

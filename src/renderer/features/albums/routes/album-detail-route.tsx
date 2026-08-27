@@ -114,8 +114,6 @@ const AlbumDetailRoute = () => {
                             '--album-color-continuation-barely': palette.continuationBarely,
                             '--album-color-continuation-faint': palette.continuationFaint.css,
                             '--album-color-continuation-mid': palette.continuationMid.css,
-                            '--album-color-continuation-near': palette.continuationNear,
-                            '--album-color-continuation-soft': palette.continuationSoft,
                             '--album-color-continuation-start': palette.continuationStart.css,
                             '--album-color-continuation-trace': palette.continuationTrace,
                             '--album-color-continuation-ultra-near':

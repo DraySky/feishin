@@ -10,8 +10,6 @@ export interface AlbumDetailPalette {
     continuationBarely: string;
     continuationFaint: AlbumDetailTone;
     continuationMid: AlbumDetailTone;
-    continuationNear: string;
-    continuationSoft: string;
     continuationStart: AlbumDetailTone;
     continuationTrace: string;
     continuationUltraNear: string;
@@ -91,8 +89,6 @@ export const createAlbumDetailPalette = (base: string): AlbumDetailPalette => {
             continuationBarely: base,
             continuationFaint: fallback,
             continuationMid: fallback,
-            continuationNear: base,
-            continuationSoft: base,
             continuationStart: fallback,
             continuationTrace: base,
             continuationUltraNear: base,
@@ -128,18 +124,18 @@ export const createAlbumDetailPalette = (base: string): AlbumDetailPalette => {
         seed.hue,
     );
     const continuationStart = createTone(
-        Math.max(0.24, heroBottom.lightness - 0.055),
-        clamp(heroBottom.chroma * 0.88, 0.035, 0.15),
+        Math.max(0.29, heroBottom.lightness - 0.035),
+        clamp(heroBottom.chroma * 0.9, 0.04, 0.15),
         seed.hue,
     );
     const continuationMid = createTone(
-        Math.max(0.18, heroBottom.lightness - 0.12),
-        clamp(heroBottom.chroma * 0.68, 0.025, 0.11),
+        Math.max(0.25, heroBottom.lightness - 0.065),
+        clamp(heroBottom.chroma * 0.78, 0.03, 0.13),
         seed.hue,
     );
     const continuationFaint = createTone(
-        Math.max(0.14, heroBottom.lightness - 0.17),
-        clamp(heroBottom.chroma * 0.45, 0.015, 0.075),
+        Math.max(0.21, heroBottom.lightness - 0.095),
+        clamp(heroBottom.chroma * 0.62, 0.025, 0.1),
         seed.hue,
     );
 
@@ -149,12 +145,6 @@ export const createAlbumDetailPalette = (base: string): AlbumDetailPalette => {
             `color-mix(in oklab, ${continuationStart.css} 2%, transparent)`,
         continuationFaint,
         continuationMid,
-        continuationNear:
-            `color-mix(in oklab, ${continuationFaint.css} 18%, ` +
-            'var(--theme-colors-background))',
-        continuationSoft:
-            `color-mix(in oklab, ${continuationFaint.css} 45%, ` +
-            'var(--theme-colors-background))',
         continuationStart,
         continuationTrace:
             `color-mix(in oklab, ${continuationStart.css} 5%, transparent)`,
