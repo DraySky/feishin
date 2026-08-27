@@ -5,6 +5,7 @@ import { useParams } from 'react-router';
 import styles from './album-detail-route.module.css';
 
 import { useItemImageUrl } from '/@/renderer/components/item-image/item-image';
+import { TableItemSize } from '/@/renderer/components/item-list/item-table-list/item-table-list';
 import { NativeScrollArea } from '/@/renderer/components/native-scroll-area/native-scroll-area';
 import { albumQueries } from '/@/renderer/features/albums/api/album-api';
 import { AlbumDetailContent } from '/@/renderer/features/albums/components/album-detail-content';
@@ -27,6 +28,7 @@ import { ItemListKey } from '/@/shared/types/types';
 
 const ALBUM_DETAIL_BG_FALLBACK = 'var(--theme-colors-foreground-muted)';
 const ALBUM_DETAIL_TABLE_HEADER_HEIGHT = 40;
+const ALBUM_DETAIL_TAIL_ROWS = 3.5;
 
 const AlbumDetailRoute = () => {
     const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -35,6 +37,9 @@ const AlbumDetailRoute = () => {
     const { albumBackground, albumBackgroundBlur } = useAlbumBackground();
     const enableTableHeader = useSettingsStore(
         (state) => state.lists[ItemListKey.ALBUM_DETAIL]?.table.enableHeader,
+    );
+    const tableSize = useSettingsStore(
+        (state) => state.lists[ItemListKey.ALBUM_DETAIL]?.table.size,
     );
 
     const { albumId } = useParams() as { albumId: string };
@@ -69,6 +74,15 @@ const AlbumDetailRoute = () => {
             (enableTableHeader ? ALBUM_DETAIL_TABLE_HEADER_HEIGHT : 0),
         0,
     );
+    const rowHeight =
+        tableSize === 'compact'
+            ? TableItemSize.COMPACT
+            : tableSize === 'medium'
+              ? TableItemSize.MEDIUM
+              : tableSize === 'large'
+                ? TableItemSize.LARGE
+                : TableItemSize.DEFAULT;
+    const tailHeight = rowHeight * ALBUM_DETAIL_TAIL_ROWS;
 
     const showBlurredImage = albumBackground;
 
@@ -102,8 +116,10 @@ const AlbumDetailRoute = () => {
                             '--album-color-continuation-near': palette.continuationNear,
                             '--album-color-continuation-soft': palette.continuationSoft,
                             '--album-color-continuation-start': palette.continuationStart.css,
+                            '--album-color-continuation-trace': palette.continuationTrace,
                             '--album-color-continuation-ultra-near':
                                 palette.continuationUltraNear,
+                            '--album-color-continuation-whisper': palette.continuationWhisper,
                             '--album-color-hero-bottom': palette.heroBottom.css,
                             '--album-color-hero-mid': palette.heroMid.css,
                             '--album-color-hero-top': palette.heroTop.css,
@@ -137,6 +153,15 @@ const AlbumDetailRoute = () => {
                                     heroHeight > 0 && albumHeaderHeight > 0 ? 'visible' : 'hidden',
                             } as React.CSSProperties
                         }
+                    />
+                    <div
+                        className={styles.backgroundTail}
+                        style={{
+                            height: `${tailHeight}px`,
+                            top: `${heroHeight + continuationHeight}px`,
+                            visibility:
+                                heroHeight > 0 && albumHeaderHeight > 0 ? 'visible' : 'hidden',
+                        }}
                     />
                     <div className={styles.foreground}>
                         <LibraryContainer>
