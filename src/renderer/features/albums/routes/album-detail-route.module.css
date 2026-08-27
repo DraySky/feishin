@@ -43,6 +43,7 @@
         var(--album-color-continuation-fade-12) var(--album-gradient-fade-12-stop),
         var(--album-color-continuation-fade-7) var(--album-gradient-fade-7-stop),
         var(--album-color-continuation-fade-3) var(--album-gradient-fade-3-stop),
+        transparent var(--album-gradient-transparent-stop),
         transparent 100%
     );
 }
