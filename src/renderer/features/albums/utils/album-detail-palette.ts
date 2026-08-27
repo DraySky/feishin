@@ -120,46 +120,53 @@ export const createAlbumDetailPalette = (base: string): AlbumDetailPalette => {
         };
     }
 
+    const isAchromatic = seed.chroma <= 0.02;
+    const paletteChroma = (chroma: number, min: number, max: number) =>
+        isAchromatic ? 0 : clamp(chroma, min, max);
     const chromaIntensity = smoothstep(0.1, 0.2, seed.chroma);
     const lightnessIntensity = smoothstep(0.45, 0.62, seed.lightness);
     const intensity = clamp(chromaIntensity * 0.72 + lightnessIntensity * 0.28, 0, 1);
     const heroTop = createTone(
-        clamp(
-            seed.lightness + interpolate(0.1, 0.025, intensity),
-            0.5,
-            interpolate(0.66, 0.62, intensity),
-        ),
-        clamp(seed.chroma * interpolate(1.08, 0.68, intensity), 0.055, 0.2),
+        isAchromatic
+            ? clamp(seed.lightness + 0.1, 0.44, 0.62)
+            : clamp(
+                  seed.lightness + interpolate(0.1, 0.025, intensity),
+                  0.5,
+                  interpolate(0.66, 0.62, intensity),
+              ),
+        paletteChroma(seed.chroma * interpolate(1.08, 0.68, intensity), 0.055, 0.2),
         seed.hue,
     );
     const heroMid = createTone(
-        clamp(seed.lightness + interpolate(0.03, -0.015, intensity), 0.42, 0.58),
-        clamp(seed.chroma * interpolate(1.02, 0.72, intensity), 0.05, 0.19),
+        isAchromatic
+            ? clamp(seed.lightness + 0.03, 0.38, 0.56)
+            : clamp(seed.lightness + interpolate(0.03, -0.015, intensity), 0.42, 0.58),
+        paletteChroma(seed.chroma * interpolate(1.02, 0.72, intensity), 0.05, 0.19),
         seed.hue,
     );
     const heroBottom = createTone(
         clamp(heroMid.lightness - interpolate(0.07, 0.09, intensity), 0.3, 0.46),
-        clamp(seed.chroma * interpolate(0.95, 0.7, intensity), 0.045, 0.17),
+        paletteChroma(seed.chroma * interpolate(0.95, 0.7, intensity), 0.045, 0.17),
         seed.hue,
     );
     const continuationStart = createTone(
         Math.max(0.29, heroBottom.lightness - 0.035),
-        clamp(heroBottom.chroma * 0.9, 0.04, 0.15),
+        paletteChroma(heroBottom.chroma * 0.9, 0.04, 0.15),
         seed.hue,
     );
     const continuationMid = createTone(
         Math.max(0.25, heroBottom.lightness - 0.065),
-        clamp(heroBottom.chroma * 0.78, 0.03, 0.13),
+        paletteChroma(heroBottom.chroma * 0.78, 0.03, 0.13),
         seed.hue,
     );
     const continuationFaint = createTone(
         Math.max(0.21, heroBottom.lightness - 0.095),
-        clamp(heroBottom.chroma * 0.62, 0.025, 0.1),
+        paletteChroma(heroBottom.chroma * 0.62, 0.025, 0.1),
         seed.hue,
     );
     const continuationAmbient = createTone(
         Math.max(0.19, heroBottom.lightness - 0.13),
-        clamp(heroBottom.chroma * 0.55, 0.02, 0.09),
+        paletteChroma(heroBottom.chroma * 0.55, 0.02, 0.09),
         seed.hue,
     );
 
