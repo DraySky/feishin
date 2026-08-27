@@ -13,14 +13,23 @@
                             0.1
                         )
                 ),
-                0.66
+                calc(
+                    0.66 -
+                        clamp(
+                            0,
+                            calc(
+                                max(0, l - 0.58) * 0.3 + max(0, c - 0.18) * 0.25
+                            ),
+                            0.04
+                        )
+                )
             )
             clamp(
                 0.055,
                 calc(
                     c *
                         clamp(
-                            0.72,
+                            0.62,
                             calc(
                                 1.08 - max(0, c - 0.16) * 3 - max(0, l - 0.6) * 0.6
                             ),
@@ -43,7 +52,7 @@
                 calc(
                     c *
                         clamp(
-                            0.72,
+                            0.62,
                             calc(
                                 1.02 - max(0, c - 0.16) * 2.5 - max(0, l - 0.6) * 0.5
                             ),
@@ -58,7 +67,7 @@
         from var(--album-color-base) clamp(0.3, calc(l - 0.07), 0.46)
             clamp(
                 0.045,
-                calc(c * clamp(0.7, calc(0.95 - max(0, c - 0.16) * 2.5), 0.95)),
+                calc(c * clamp(0.62, calc(0.95 - max(0, c - 0.16) * 2.5), 0.95)),
                 0.17
             )
             h
@@ -74,6 +83,11 @@
     --album-color-continuation-faint: oklch(
         from var(--album-color-hero-bottom) max(0.14, calc(l - 0.17))
             clamp(0.015, calc(c * 0.45), 0.075) h
+    );
+    --album-color-continuation-near: color-mix(
+        in oklab,
+        var(--album-color-continuation-faint) 20%,
+        var(--theme-colors-background)
     );
 
     position: relative;
@@ -109,8 +123,9 @@
     background: linear-gradient(
         to bottom,
         var(--album-color-continuation-start) 0%,
-        var(--album-color-continuation-mid) 38%,
-        var(--album-color-continuation-faint) 72%,
+        var(--album-color-continuation-mid) 32%,
+        var(--album-color-continuation-faint) 58%,
+        var(--album-color-continuation-near) 80%,
         var(--theme-colors-background) 100%
     );
 }
