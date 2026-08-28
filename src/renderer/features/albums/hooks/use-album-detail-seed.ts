@@ -44,10 +44,12 @@ export const useAlbumDetailSeed = (args: {
 
             if (sampled.status === 'fulfilled') {
                 logger.debug('Selected album detail color', {
+                    accentRescueReason: sampled.value.accentRescueReason,
                     accentRescued: sampled.value.accentRescued,
                     chromaticShare: sampled.value.chromaticShare,
                     correction: sampled.value.correction,
                     finalSelected: sampled.value.selected,
+                    hueFamilies: sampled.value.hueFamilies,
                     largestChromaticHueFamilyAverageChroma:
                         sampled.value.largestChromaticHueFamilyAverageChroma,
                     largestChromaticHueFamilyCoverage:
@@ -58,6 +60,8 @@ export const useAlbumDetailSeed = (args: {
                     selectedHueFamily: Math.floor(sampled.value.selected.tone.hue / 60),
                     strongestChromaticHueFamilyEnergy:
                         sampled.value.strongestChromaticHueFamilyEnergy,
+                    strongestChromaticHueFamilySalientEnergy:
+                        sampled.value.strongestChromaticHueFamilySalientEnergy,
                     topCandidates: sampled.value.clusters.slice(0, 3),
                 });
             }
