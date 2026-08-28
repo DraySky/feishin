@@ -3,7 +3,8 @@ import { parseAlbumDetailColor } from './album-detail-palette';
 
 const SAMPLE_SIZE = 32;
 const NEUTRAL_CHROMA = 0.05;
-const MONOCHROME_SHARE = 0.65;
+const MEANINGFUL_CHROMA = 0.06;
+const MONOCHROME_SHARE = 0.8;
 const MIN_CLUSTER_COVERAGE = 0.06;
 
 interface SampledPixel {
@@ -21,7 +22,10 @@ export interface AlbumDetailArtworkCluster {
 }
 
 export interface AlbumDetailArtworkAnalysis {
+    chromaticShare: number;
     clusters: AlbumDetailArtworkCluster[];
+    largestChromaticHueFamilyAverageChroma: number;
+    largestChromaticHueFamilyCoverage: number;
     mode: 'chromatic' | 'monochrome';
     neutralShare: number;
     sampleCount: number;
@@ -101,22 +105,63 @@ export const analyzeAlbumDetailArtworkPixels = (
 
     const neutralPixels = pixels.filter(({ tone }) => tone.chroma <= NEUTRAL_CHROMA);
     const neutralShare = neutralPixels.length / pixels.length;
+    const chromaticPixels = pixels.filter(({ tone }) => tone.chroma >= MEANINGFUL_CHROMA);
+    const chromaticShare = chromaticPixels.length / pixels.length;
+    const hueFamilies = new Map<number, SampledPixel[]>();
 
-    if (neutralShare >= MONOCHROME_SHARE) {
-        const eligible = neutralPixels.filter(
-            ({ tone }) => tone.lightness >= 0.12 && tone.lightness <= 0.88,
-        );
-        const candidates = eligible.length ? eligible : neutralPixels;
-        const lightness = Math.min(
-            0.38,
-            Math.max(...candidates.map(({ tone }) => tone.lightness)),
+    for (const pixel of chromaticPixels) {
+        const family = Math.floor(pixel.tone.hue / 60);
+        const members = hueFamilies.get(family);
+
+        if (members) {
+            members.push(pixel);
+        } else {
+            hueFamilies.set(family, [pixel]);
+        }
+    }
+
+    const hueFamilyStats = [...hueFamilies.values()].map((family) => ({
+        averageChroma:
+            family.reduce((total, pixel) => total + pixel.tone.chroma, 0) / family.length,
+        coverage: family.length / pixels.length,
+    }));
+    const largestHueFamily = hueFamilyStats.sort(
+        (first, second) => second.coverage - first.coverage,
+    )[0];
+    const largestChromaticHueFamilyCoverage = largestHueFamily
+        ? largestHueFamily.coverage
+        : 0;
+    const largestChromaticHueFamilyAverageChroma = largestHueFamily
+        ? largestHueFamily.averageChroma
+        : 0;
+    const strongestHueFamilyEnergy = Math.max(
+        0,
+        ...hueFamilyStats.map(({ averageChroma, coverage }) => averageChroma * coverage),
+    );
+    const isMonochrome =
+        neutralShare >= MONOCHROME_SHARE &&
+        chromaticShare < 0.18 &&
+        largestChromaticHueFamilyCoverage < 0.1 &&
+        strongestHueFamilyEnergy < 0.018;
+
+    if (isMonochrome) {
+        const lightnesses = neutralPixels
+            .map(({ tone }) => tone.lightness)
+            .sort((first, second) => first - second);
+        const lightness = clamp(
+            lightnesses[Math.floor((lightnesses.length - 1) * 0.6)],
+            0.28,
+            0.42,
         );
         const rgb = neutralRgb(lightness);
         const tone = parseAlbumDetailColor(rgb);
 
         return tone
             ? {
+                  chromaticShare,
                   clusters: [],
+                  largestChromaticHueFamilyAverageChroma,
+                  largestChromaticHueFamilyCoverage,
                   mode: 'monochrome',
                   neutralShare,
                   sampleCount: pixels.length,
@@ -173,7 +218,10 @@ export const analyzeAlbumDetailArtworkPixels = (
 
     return clusters.length
         ? {
+              chromaticShare,
               clusters,
+              largestChromaticHueFamilyAverageChroma,
+              largestChromaticHueFamilyCoverage,
               mode: 'chromatic',
               neutralShare,
               sampleCount: pixels.length,
