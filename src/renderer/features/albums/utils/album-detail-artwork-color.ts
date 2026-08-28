@@ -16,14 +16,22 @@ interface SampledPixel {
 
 export interface AlbumDetailArtworkCluster {
     coverage: number;
+    freshnessScore: number;
+    mudPenalty: number;
     rgb: string;
     score: number;
     tone: AlbumDetailTone;
 }
 
+export interface AlbumDetailArtworkCorrection {
+    adjustments: string[];
+    originalRgb: string;
+}
+
 export interface AlbumDetailArtworkAnalysis {
     chromaticShare: number;
     clusters: AlbumDetailArtworkCluster[];
+    correction: AlbumDetailArtworkCorrection;
     largestChromaticHueFamilyAverageChroma: number;
     largestChromaticHueFamilyCoverage: number;
     mode: 'chromatic' | 'monochrome';
@@ -42,6 +50,30 @@ const smoothstep = (min: number, max: number, value: number) => {
 
 const toRgb = (red: number, green: number, blue: number) =>
     `rgb(${Math.round(red)}, ${Math.round(green)}, ${Math.round(blue)})`;
+
+const toneToRgb = (lightness: number, chroma: number, hue: number) => {
+    const radians = (hue * Math.PI) / 180;
+    const a = chroma * Math.cos(radians);
+    const b = chroma * Math.sin(radians);
+    const linearL = (lightness + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+    const linearM = (lightness - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+    const linearS = (lightness - 0.0894841775 * a - 1.291485548 * b) ** 3;
+    const channels = [
+        4.0767416621 * linearL - 3.3077115913 * linearM + 0.2309699292 * linearS,
+        -1.2684380046 * linearL + 2.6097574011 * linearM - 0.3413193965 * linearS,
+        -0.0041960863 * linearL - 0.7034186147 * linearM + 1.707614701 * linearS,
+    ].map((channel) => {
+        const normalized = clamp(channel, 0, 1);
+        return (
+            255 *
+            (normalized <= 0.0031308
+                ? normalized * 12.92
+                : 1.055 * normalized ** (1 / 2.4) - 0.055)
+        );
+    });
+
+    return toRgb(channels[0], channels[1], channels[2]);
+};
 
 const neutralRgb = (lightness: number) => {
     const linear = lightness ** 3;
@@ -72,6 +104,8 @@ const createCluster = (
     return tone
         ? {
               coverage: pixels.length / sampleCount,
+              freshnessScore: 0,
+              mudPenalty: 0,
               rgb,
               score: 0,
               tone,
@@ -165,7 +199,15 @@ export const analyzeAlbumDetailArtworkPixels = (
                   mode: 'monochrome',
                   neutralShare,
                   sampleCount: pixels.length,
-                  selected: { coverage: neutralShare, rgb, score: 1, tone },
+                  correction: { adjustments: ['neutral'], originalRgb: rgb },
+                  selected: {
+                      coverage: neutralShare,
+                      freshnessScore: 1,
+                      mudPenalty: 0,
+                      rgb,
+                      score: 1,
+                      tone,
+                  },
               }
             : null;
     }
@@ -202,30 +244,76 @@ export const analyzeAlbumDetailArtworkPixels = (
                 smoothstep(0.53, 0.72, cluster.tone.lightness) *
                 (1 - smoothstep(0.08, 0.12, cluster.tone.chroma));
             const brightPenalty = smoothstep(0.65, 0.85, cluster.tone.lightness);
+            const mudHue =
+                smoothstep(55, 82, cluster.tone.hue) *
+                (1 - smoothstep(112, 135, cluster.tone.hue));
+            const mudPenalty = mudHue * (1 - smoothstep(0.1, 0.16, cluster.tone.chroma));
+            const freshnessScore = clamp(
+                lightnessScore * 0.45 +
+                    richnessScore * 0.55 -
+                    washedOutPenalty * 0.4 -
+                    mudPenalty * 0.25,
+                0,
+                1,
+            );
 
             return {
                 ...cluster,
+                freshnessScore,
+                mudPenalty,
                 score:
                     coverageScore * 0.5 +
                     lightnessScore * 0.3 +
                     richnessScore * 0.25 -
                     tinyClusterPenalty * 0.5 -
                     washedOutPenalty * 0.4 -
-                    brightPenalty * 0.25,
+                    brightPenalty * 0.25 -
+                    mudPenalty * 0.2 +
+                    freshnessScore * 0.15,
             };
         })
         .sort((first, second) => second.score - first.score);
 
-    return clusters.length
+    const selected = clusters[0];
+    const adjustments: string[] = [];
+    let { chroma, hue, lightness } = selected?.tone ?? { chroma: 0, hue: 0, lightness: 0 };
+
+    if (lightness > 0.53) {
+        lightness = 0.5;
+        adjustments.push('deepened');
+    }
+
+    if (chroma < 0.085 && chromaticShare >= 0.12) {
+        chroma = 0.085;
+        adjustments.push('enriched');
+    }
+
+    if (selected?.mudPenalty > 0.2) {
+        hue = hue >= 92 ? 88 : hue < 72 ? 76 : hue;
+        chroma = Math.max(chroma, 0.105);
+        lightness = Math.min(lightness, 0.5);
+        adjustments.push('cleaned-warm-hue');
+    }
+
+    const correctedRgb =
+        selected && adjustments.length ? toneToRgb(lightness, chroma, hue) : null;
+    const correctedTone = correctedRgb ? parseAlbumDetailColor(correctedRgb) : null;
+    const correctedSelection =
+        selected && correctedRgb && correctedTone
+            ? { ...selected, rgb: correctedRgb, tone: correctedTone }
+            : selected;
+
+    return correctedSelection
         ? {
               chromaticShare,
               clusters,
+              correction: { adjustments, originalRgb: selected.rgb },
               largestChromaticHueFamilyAverageChroma,
               largestChromaticHueFamilyCoverage,
               mode: 'chromatic',
               neutralShare,
               sampleCount: pixels.length,
-              selected: clusters[0],
+              selected: correctedSelection,
           }
         : null;
 };
