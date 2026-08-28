@@ -15,9 +15,12 @@ interface SampledPixel {
 }
 
 export interface AlbumDetailArtworkCluster {
+    chromaticEnergy: number;
     coverage: number;
     freshnessScore: number;
+    hueFamilyCoverage: number;
     mudPenalty: number;
+    richnessScore: number;
     rgb: string;
     score: number;
     tone: AlbumDetailTone;
@@ -29,6 +32,7 @@ export interface AlbumDetailArtworkCorrection {
 }
 
 export interface AlbumDetailArtworkAnalysis {
+    accentRescued: boolean;
     chromaticShare: number;
     clusters: AlbumDetailArtworkCluster[];
     correction: AlbumDetailArtworkCorrection;
@@ -38,6 +42,7 @@ export interface AlbumDetailArtworkAnalysis {
     neutralShare: number;
     sampleCount: number;
     selected: AlbumDetailArtworkCluster;
+    strongestChromaticHueFamilyEnergy: number;
 }
 
 const clamp = (value: number, min: number, max: number) =>
@@ -103,9 +108,12 @@ const createCluster = (
 
     return tone
         ? {
+              chromaticEnergy: 0,
               coverage: pixels.length / sampleCount,
               freshnessScore: 0,
+              hueFamilyCoverage: 0,
               mudPenalty: 0,
+              richnessScore: 0,
               rgb,
               score: 0,
               tone,
@@ -154,12 +162,13 @@ export const analyzeAlbumDetailArtworkPixels = (
         }
     }
 
-    const hueFamilyStats = [...hueFamilies.values()].map((family) => ({
+    const hueFamilyStats = [...hueFamilies.entries()].map(([hueFamily, family]) => ({
         averageChroma:
             family.reduce((total, pixel) => total + pixel.tone.chroma, 0) / family.length,
         coverage: family.length / pixels.length,
+        hueFamily,
     }));
-    const largestHueFamily = hueFamilyStats.sort(
+    const largestHueFamily = [...hueFamilyStats].sort(
         (first, second) => second.coverage - first.coverage,
     )[0];
     const largestChromaticHueFamilyCoverage = largestHueFamily
@@ -168,15 +177,23 @@ export const analyzeAlbumDetailArtworkPixels = (
     const largestChromaticHueFamilyAverageChroma = largestHueFamily
         ? largestHueFamily.averageChroma
         : 0;
-    const strongestHueFamilyEnergy = Math.max(
+    const strongestChromaticHueFamilyEnergy = Math.max(
         0,
         ...hueFamilyStats.map(({ averageChroma, coverage }) => averageChroma * coverage),
     );
+    const accentRescued =
+        neutralShare >= MONOCHROME_SHARE &&
+        hueFamilyStats.some(
+            ({ averageChroma, coverage }) =>
+                coverage >= 0.085 &&
+                averageChroma >= 0.11 &&
+                coverage * averageChroma >= 0.015,
+        );
     const isMonochrome =
         neutralShare >= MONOCHROME_SHARE &&
         chromaticShare < 0.18 &&
         largestChromaticHueFamilyCoverage < 0.1 &&
-        strongestHueFamilyEnergy < 0.018;
+        !accentRescued;
 
     if (isMonochrome) {
         const lightnesses = neutralPixels
@@ -192,6 +209,7 @@ export const analyzeAlbumDetailArtworkPixels = (
 
         return tone
             ? {
+                  accentRescued,
                   chromaticShare,
                   clusters: [],
                   largestChromaticHueFamilyAverageChroma,
@@ -201,13 +219,17 @@ export const analyzeAlbumDetailArtworkPixels = (
                   sampleCount: pixels.length,
                   correction: { adjustments: ['neutral'], originalRgb: rgb },
                   selected: {
+                      chromaticEnergy: 0,
                       coverage: neutralShare,
                       freshnessScore: 1,
+                      hueFamilyCoverage: 0,
                       mudPenalty: 0,
+                      richnessScore: 0,
                       rgb,
                       score: 1,
                       tone,
                   },
+                  strongestChromaticHueFamilyEnergy,
               }
             : null;
     }
@@ -238,6 +260,13 @@ export const analyzeAlbumDetailArtworkPixels = (
             const lightnessScore = 1 - clamp(Math.abs(cluster.tone.lightness - 0.39) / 0.28, 0, 1);
             const richnessScore = 1 - clamp(Math.abs(cluster.tone.chroma - 0.125) / 0.125, 0, 1);
             const coverageScore = clamp(cluster.coverage / 0.3, 0, 1);
+            const chromaticEnergy = cluster.coverage * cluster.tone.chroma;
+            const energyScore = clamp(chromaticEnergy / 0.03, 0, 1);
+            const hueFamilyCoverage =
+                hueFamilyStats.find(
+                    ({ hueFamily }) => hueFamily === Math.floor(cluster.tone.hue / 60),
+                )?.coverage ?? 0;
+            const hueFamilyConfidence = clamp(hueFamilyCoverage / 0.2, 0, 1);
             const tinyClusterPenalty =
                 1 - clamp(cluster.coverage / MIN_CLUSTER_COVERAGE, 0, 1);
             const washedOutPenalty =
@@ -248,6 +277,7 @@ export const analyzeAlbumDetailArtworkPixels = (
                 smoothstep(55, 82, cluster.tone.hue) *
                 (1 - smoothstep(112, 135, cluster.tone.hue));
             const mudPenalty = mudHue * (1 - smoothstep(0.1, 0.16, cluster.tone.chroma));
+            const effectiveMudPenalty = mudPenalty * (1 - coverageScore * 0.5);
             const freshnessScore = clamp(
                 lightnessScore * 0.45 +
                     richnessScore * 0.55 -
@@ -259,16 +289,21 @@ export const analyzeAlbumDetailArtworkPixels = (
 
             return {
                 ...cluster,
+                chromaticEnergy,
                 freshnessScore,
+                hueFamilyCoverage,
                 mudPenalty,
+                richnessScore,
                 score:
                     coverageScore * 0.5 +
+                    energyScore * 0.15 +
+                    hueFamilyConfidence * 0.1 +
                     lightnessScore * 0.3 +
                     richnessScore * 0.25 -
                     tinyClusterPenalty * 0.5 -
                     washedOutPenalty * 0.4 -
                     brightPenalty * 0.25 -
-                    mudPenalty * 0.2 +
+                    effectiveMudPenalty * 0.2 +
                     freshnessScore * 0.15,
             };
         })
@@ -289,7 +324,8 @@ export const analyzeAlbumDetailArtworkPixels = (
     }
 
     if (selected?.mudPenalty > 0.2) {
-        hue = hue >= 92 ? 88 : hue < 72 ? 76 : hue;
+        hue =
+            hue >= 92 ? Math.max(88, hue - 8) : hue < 72 ? Math.min(76, hue + 6) : hue;
         chroma = Math.max(chroma, 0.105);
         lightness = Math.min(lightness, 0.5);
         adjustments.push('cleaned-warm-hue');
@@ -305,6 +341,7 @@ export const analyzeAlbumDetailArtworkPixels = (
 
     return correctedSelection
         ? {
+              accentRescued,
               chromaticShare,
               clusters,
               correction: { adjustments, originalRgb: selected.rgb },
@@ -314,6 +351,7 @@ export const analyzeAlbumDetailArtworkPixels = (
               neutralShare,
               sampleCount: pixels.length,
               selected: correctedSelection,
+              strongestChromaticHueFamilyEnergy,
           }
         : null;
 };

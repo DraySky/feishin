@@ -44,16 +44,21 @@ export const useAlbumDetailSeed = (args: {
 
             if (sampled.status === 'fulfilled') {
                 logger.debug('Selected album detail color', {
+                    accentRescued: sampled.value.accentRescued,
                     chromaticShare: sampled.value.chromaticShare,
                     correction: sampled.value.correction,
+                    finalSelected: sampled.value.selected,
                     largestChromaticHueFamilyAverageChroma:
                         sampled.value.largestChromaticHueFamilyAverageChroma,
                     largestChromaticHueFamilyCoverage:
                         sampled.value.largestChromaticHueFamilyCoverage,
                     mode: sampled.value.mode,
                     neutralShare: sampled.value.neutralShare,
-                    selected: sampled.value.selected,
+                    rawSelected: sampled.value.clusters[0] ?? sampled.value.selected,
                     selectedHueFamily: Math.floor(sampled.value.selected.tone.hue / 60),
+                    strongestChromaticHueFamilyEnergy:
+                        sampled.value.strongestChromaticHueFamilyEnergy,
+                    topCandidates: sampled.value.clusters.slice(0, 3),
                 });
             }
 
