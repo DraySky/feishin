@@ -126,27 +126,38 @@ export const createAlbumDetailPalette = (base: string): AlbumDetailPalette => {
     const chromaIntensity = smoothstep(0.1, 0.2, seed.chroma);
     const lightnessIntensity = smoothstep(0.45, 0.62, seed.lightness);
     const intensity = clamp(chromaIntensity * 0.72 + lightnessIntensity * 0.28, 0, 1);
+    const chromaFloorIntensity = smoothstep(0.02, 0.1, seed.chroma);
+    const heroTopChromaFloor = interpolate(0.055, 0.075, chromaFloorIntensity);
+    const heroMidChromaFloor = interpolate(0.05, 0.07, chromaFloorIntensity);
     const heroTop = createTone(
         isAchromatic
             ? clamp(seed.lightness + 0.1, 0.44, 0.62)
             : clamp(
-                  seed.lightness + interpolate(0.1, 0.025, intensity),
-                  0.5,
-                  interpolate(0.66, 0.62, intensity),
+                  seed.lightness + interpolate(0.05, 0.01, intensity),
+                  0.45,
+                  interpolate(0.6, 0.56, intensity),
               ),
-        paletteChroma(seed.chroma * interpolate(1.08, 0.68, intensity), 0.055, 0.2),
+        paletteChroma(
+            seed.chroma * interpolate(1.06, 0.9, intensity),
+            heroTopChromaFloor,
+            0.2,
+        ),
         seed.hue,
     );
     const heroMid = createTone(
         isAchromatic
             ? clamp(seed.lightness + 0.03, 0.38, 0.56)
-            : clamp(seed.lightness + interpolate(0.03, -0.015, intensity), 0.42, 0.58),
-        paletteChroma(seed.chroma * interpolate(1.02, 0.72, intensity), 0.05, 0.19),
+            : clamp(seed.lightness + interpolate(0.015, -0.01, intensity), 0.4, 0.54),
+        paletteChroma(
+            seed.chroma * interpolate(1, 0.9, intensity),
+            heroMidChromaFloor,
+            0.19,
+        ),
         seed.hue,
     );
     const heroBottom = createTone(
         clamp(heroMid.lightness - interpolate(0.07, 0.09, intensity), 0.3, 0.46),
-        paletteChroma(seed.chroma * interpolate(0.95, 0.7, intensity), 0.045, 0.17),
+        paletteChroma(seed.chroma * interpolate(0.92, 0.8, intensity), 0.045, 0.17),
         seed.hue,
     );
     const continuationStart = createTone(
