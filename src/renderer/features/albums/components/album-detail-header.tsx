@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { forwardRef, Fragment, Ref, useMemo } from 'react';
+import { forwardRef, Fragment, Ref, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router';
 
@@ -42,6 +42,7 @@ const AlbumDetailHeaderBase = (
     const showFavorites = useShowFavorites();
     const queryClient = useQueryClient();
     const albumRadioCount = useArtistRadioCount();
+    const [albumShuffleOnPlay, setAlbumShuffleOnPlay] = useState(false);
     const detailQuery = useQuery(
         albumQueries.detail({ query: { id: albumId }, serverId: server?.id }),
     );
@@ -53,6 +54,10 @@ const AlbumDetailHeaderBase = (
 
     const { addToQueueByData, addToQueueByFetch } = usePlayer();
     const playButtonBehavior = usePlayButtonBehavior();
+
+    useEffect(() => {
+        setAlbumShuffleOnPlay(false);
+    }, [albumId]);
 
     const setRating = useSetRating();
     const setFavorite = useSetFavorite();
@@ -292,10 +297,13 @@ const AlbumDetailHeaderBase = (
                 onAlbumRadio={handleAlbumRadio}
                 onFavorite={handleFavorite}
                 onMore={handleMoreOptions}
-                onPlay={() => handlePlay()}
+                onPlay={() =>
+                    albumShuffleOnPlay ? handlePlay(Play.SHUFFLE) : handlePlay()
+                }
                 onRating={handleUpdateRating}
-                onShuffle={() => handlePlay(Play.SHUFFLE)}
+                onShuffle={() => setAlbumShuffleOnPlay((active) => !active)}
                 rating={detailQuery?.data?.userRating || 0}
+                shuffleActive={albumShuffleOnPlay}
             />
         </Stack>
     );

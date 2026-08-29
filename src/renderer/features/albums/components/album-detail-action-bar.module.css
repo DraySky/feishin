@@ -18,23 +18,58 @@
 }
 
 .secondary-action {
+    color: rgb(255 255 255 / 72%);
     background-color: transparent;
     background-image: none;
     border: 1px solid transparent;
+    box-shadow: none;
     transition:
-        background-color 160ms ease,
-        border-color 160ms ease,
-        box-shadow 200ms ease;
+        color 140ms ease,
+        filter 140ms ease,
+        transform 140ms ease;
 }
 
 .secondary-action.secondary-action[data-variant='subtle']:hover,
-.secondary-action.secondary-action[data-variant='subtle']:active,
-.secondary-action.secondary-action[data-variant='subtle']:focus-visible {
-    background-color: rgb(255 255 255 / 8%);
-    border-color: rgb(255 255 255 / 14%);
-    box-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 14%),
-        0 6px 16px -10px rgb(0 0 0 / 40%);
+.secondary-action.secondary-action[data-variant='subtle']:active {
+    background-color: transparent;
+    border-color: transparent;
+    box-shadow: none;
+}
+
+.secondary-action.secondary-action[data-variant='subtle']:hover {
+    color: var(--theme-colors-foreground);
+    filter: brightness(1.12);
+    transform: scale(1.07);
+}
+
+.secondary-action.secondary-action[data-variant='subtle']:active {
+    transform: scale(0.99);
+}
+
+.secondary-action:focus-visible {
+    outline: 2px solid rgb(255 255 255 / 45%);
+    outline-offset: 2px;
+}
+
+.shuffle-action {
+    position: relative;
+}
+
+.shuffle-action[data-shuffle-active='true'] {
+    color: var(--theme-colors-primary-filled);
+    filter: brightness(1.08);
+}
+
+.shuffle-action[data-shuffle-active='true']::after {
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    width: 4px;
+    height: 4px;
+    content: '';
+    background: currentColor;
+    border-radius: 50%;
+    transform: translateX(-50%);
 }
 
 .play-button {

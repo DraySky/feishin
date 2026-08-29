@@ -1,5 +1,6 @@
 import type { MouseEvent } from 'react';
 
+import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 
 import styles from './album-detail-action-bar.module.css';
@@ -23,6 +24,7 @@ interface AlbumDetailActionBarProps {
     onRating?: (rating: number) => void;
     onShuffle: () => void;
     rating?: number;
+    shuffleActive: boolean;
 }
 
 export const AlbumDetailActionBar = ({
@@ -34,6 +36,7 @@ export const AlbumDetailActionBar = ({
     onRating,
     onShuffle,
     rating,
+    shuffleActive,
 }: AlbumDetailActionBarProps) => {
     const { t } = useTranslation();
     const isPlayerFetching = useIsPlayerFetching();
@@ -55,7 +58,9 @@ export const AlbumDetailActionBar = ({
                     variant="transparent"
                 />
                 <ActionIcon
-                    className={styles.secondaryAction}
+                    aria-pressed={shuffleActive}
+                    className={clsx(styles.secondaryAction, styles.shuffleAction)}
+                    data-shuffle-active={shuffleActive || undefined}
                     icon="mediaShuffle"
                     iconProps={{ size: '2xl' }}
                     onClick={onShuffle}
