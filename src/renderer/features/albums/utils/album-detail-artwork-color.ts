@@ -44,15 +44,31 @@ export interface AlbumDetailArtworkHueFamily {
     coverage: number;
     familyEvidence: number;
     hueFamily: number;
+    rawFamilyEvidence: number;
     salientEnergy: number;
     spatialSalience: number;
     shortlisted: boolean;
     shortlistReason: 'relative-evidence' | 'salient-accent' | 'substantial-accent' | null;
+    vividWarmShare: number;
+    warmAverageChroma: number;
+    warmEvidencePenalty: number;
+    warmMudShare: number;
+    warmQuality: number;
 }
 
 export interface AlbumDetailArtworkCorrection {
     adjustments: string[];
     originalRgb: string;
+}
+
+export interface AlbumDetailArtworkWarmDecision {
+    alternativeFamilyConsidered: number | null;
+    alternativeTriggered: boolean;
+    evidenceRatio: number | null;
+    originalWinningFamily: number | null;
+    selectedFamily: number | null;
+    suitabilityDifference: number | null;
+    warmCorrectionApplied: boolean;
 }
 
 export interface AlbumDetailArtworkAnalysis {
@@ -70,6 +86,7 @@ export interface AlbumDetailArtworkAnalysis {
     selected: AlbumDetailArtworkCluster;
     strongestChromaticHueFamilyEnergy: number;
     strongestChromaticHueFamilySalientEnergy: number;
+    warmDecision: AlbumDetailArtworkWarmDecision;
 }
 
 const clamp = (value: number, min: number, max: number) =>
@@ -79,6 +96,19 @@ const smoothstep = (min: number, max: number, value: number) => {
     const normalized = clamp((value - min) / (max - min), 0, 1);
     return normalized * normalized * (3 - 2 * normalized);
 };
+
+const warmHueWeight = (hue: number) =>
+    smoothstep(30, 45, hue) * (1 - smoothstep(100, 115, hue));
+
+const warmMudWeight = (tone: AlbumDetailTone) =>
+    warmHueWeight(tone.hue) *
+    (1 - smoothstep(0.1, 0.16, tone.chroma)) *
+    (1 - smoothstep(0.62, 0.78, tone.lightness));
+
+const vividWarmWeight = (tone: AlbumDetailTone) =>
+    warmHueWeight(tone.hue) *
+    smoothstep(0.105, 0.16, tone.chroma) *
+    (1 - smoothstep(0.82, 0.92, tone.lightness));
 
 const spatialWeight = (x: number, y: number) => {
     const edgeDistance = Math.max(Math.abs(x - 0.5), Math.abs(y - 0.5)) * 2;
@@ -121,6 +151,53 @@ const scoreHueFamilyEvidence = (
     clamp(family.chromaticEnergy / 0.03, 0, 1) * 0.25 +
     clamp(family.salientEnergy / 0.03, 0, 1) * 0.25 +
     clamp((family.spatialSalience - 0.8) / 0.35, 0, 1) * 0.15;
+
+const calculateWarmFamilyMetrics = (pixels: SampledPixel[], rawFamilyEvidence: number) => {
+    const warmWeight = pixels.reduce(
+        (total, pixel) => total + warmHueWeight(pixel.tone.hue),
+        0,
+    );
+
+    if (!warmWeight) {
+        return {
+            familyEvidence: rawFamilyEvidence,
+            vividWarmShare: 0,
+            warmAverageChroma: 0,
+            warmEvidencePenalty: 0,
+            warmMudShare: 0,
+            warmQuality: 1,
+        };
+    }
+
+    const warmAverageChroma =
+        pixels.reduce(
+            (total, pixel) =>
+                total + pixel.tone.chroma * warmHueWeight(pixel.tone.hue),
+            0,
+        ) / warmWeight;
+    const warmMudShare =
+        pixels.reduce((total, pixel) => total + warmMudWeight(pixel.tone), 0) / pixels.length;
+    const vividWarmShare =
+        pixels.reduce((total, pixel) => total + vividWarmWeight(pixel.tone), 0) / pixels.length;
+    const warmQuality = clamp(
+        vividWarmShare * 0.55 +
+            clamp(warmAverageChroma / 0.16, 0, 1) * 0.45 -
+            warmMudShare * 0.5,
+        0,
+        1,
+    );
+    const warmEvidencePenalty =
+        rawFamilyEvidence * clamp(warmMudShare - vividWarmShare * 0.75, 0, 1) * 0.28;
+
+    return {
+        familyEvidence: rawFamilyEvidence - warmEvidencePenalty,
+        vividWarmShare,
+        warmAverageChroma,
+        warmEvidencePenalty,
+        warmMudShare,
+        warmQuality,
+    };
+};
 
 const scoreBackgroundSuitability = (scores: {
     brightPenalty: number;
@@ -179,13 +256,22 @@ const toneToRgb = (lightness: number, chroma: number, hue: number) => {
 const polishSelectedTone = (selected: AlbumDetailArtworkCluster) => {
     const adjustments: string[] = [];
     let { chroma, hue, lightness } = selected.tone;
+    const muddyWarm = warmHueWeight(hue) > 0.5 && selected.mudPenalty > 0.2;
 
-    if (lightness > 0.53) {
+    if (muddyWarm) {
+        const chromaIncrease = Math.min(0.035, Math.max(0, 0.14 - chroma) * 0.6);
+        const lightnessIncrease = Math.min(0.03, Math.max(0, 0.48 - lightness) * 0.4);
+
+        chroma += chromaIncrease;
+        lightness += lightnessIncrease;
+        if (chromaIncrease) adjustments.push('warm-enriched');
+        if (lightnessIncrease) adjustments.push('warm-lifted');
+    } else if (lightness > 0.53) {
         lightness = Math.max(0.5, lightness - 0.05);
         adjustments.push('deepened');
     }
 
-    if (chroma < 0.13) {
+    if (!muddyWarm && chroma < 0.13) {
         chroma += Math.min(0.035, (0.13 - chroma) * 0.6);
         adjustments.push('enriched');
     }
@@ -315,18 +401,28 @@ export const analyzeAlbumDetailArtworkPixels = (
                 family.reduce((total, pixel) => total + pixel.tone.chroma, 0) / family.length;
             const spatialSalience =
                 family.reduce((total, pixel) => total + pixel.spatialWeight, 0) / family.length;
+            const salientEnergy =
+                family.reduce(
+                    (total, pixel) => total + pixel.tone.chroma * pixel.spatialWeight,
+                    0,
+                ) / pixels.length;
+
+            const rawFamilyEvidence = scoreHueFamilyEvidence({
+                chromaticEnergy: coverage * averageChroma,
+                coverage,
+                salientEnergy,
+                spatialSalience,
+            });
+            const warmMetrics = calculateWarmFamilyMetrics(family, rawFamilyEvidence);
 
             return {
                 averageChroma,
                 chromaticEnergy: coverage * averageChroma,
                 coverage,
-                familyEvidence: 0,
+                ...warmMetrics,
                 hueFamily,
-                salientEnergy:
-                    family.reduce(
-                        (total, pixel) => total + pixel.tone.chroma * pixel.spatialWeight,
-                        0,
-                    ) / pixels.length,
+                rawFamilyEvidence,
+                salientEnergy,
                 spatialSalience,
                 shortlisted: false,
                 shortlistReason: null,
@@ -335,10 +431,10 @@ export const analyzeAlbumDetailArtworkPixels = (
     );
     const bestFamilyEvidence = Math.max(
         0,
-        ...rawHueFamilyStats.map((family) => scoreHueFamilyEvidence(family)),
+        ...rawHueFamilyStats.map(({ familyEvidence }) => familyEvidence),
     );
     const hueFamilyStats = rawHueFamilyStats.map((family) => {
-        const familyEvidence = scoreHueFamilyEvidence(family);
+        const { familyEvidence } = family;
         const accentReason = getAccentReason(family);
         const relativeEvidence =
             familyEvidence >= 0.12 && familyEvidence >= bestFamilyEvidence * 0.68;
@@ -435,6 +531,15 @@ export const analyzeAlbumDetailArtworkPixels = (
                   },
                   strongestChromaticHueFamilyEnergy,
                   strongestChromaticHueFamilySalientEnergy,
+                  warmDecision: {
+                      alternativeFamilyConsidered: null,
+                      alternativeTriggered: false,
+                      evidenceRatio: null,
+                      originalWinningFamily: null,
+                      selectedFamily: null,
+                      suitabilityDifference: null,
+                      warmCorrectionApplied: false,
+                  },
               }
             : null;
     }
@@ -540,6 +645,27 @@ export const analyzeAlbumDetailArtworkPixels = (
         .sort((first, second) => second.score - first.score);
 
     const polishedSelection = clusters[0] ? polishSelectedTone(clusters[0]) : null;
+    const rawWinningFamily = [...hueFamilyStats].sort(
+        (first, second) => second.rawFamilyEvidence - first.rawFamilyEvidence,
+    )[0];
+    const rawWinningCluster = clusters.find(
+        ({ hueFamily }) => hueFamily === rawWinningFamily?.hueFamily,
+    );
+    const selectedFamily = polishedSelection
+        ? hueFamilyStats.find(
+              ({ hueFamily }) => hueFamily === polishedSelection.selected.hueFamily,
+          )
+        : null;
+    const originalWasMuddyWarm = Boolean(
+        rawWinningFamily &&
+        rawWinningFamily.warmMudShare > 0.25 &&
+        rawWinningFamily.warmQuality < 0.5,
+    );
+    const alternativeTriggered = Boolean(
+        originalWasMuddyWarm &&
+        selectedFamily &&
+        selectedFamily.hueFamily !== rawWinningFamily?.hueFamily,
+    );
 
     return polishedSelection
         ? {
@@ -557,6 +683,27 @@ export const analyzeAlbumDetailArtworkPixels = (
               selected: polishedSelection.selected,
               strongestChromaticHueFamilyEnergy,
               strongestChromaticHueFamilySalientEnergy,
+              warmDecision: {
+                  alternativeFamilyConsidered: alternativeTriggered
+                      ? selectedFamily?.hueFamily ?? null
+                      : null,
+                  alternativeTriggered,
+                  evidenceRatio:
+                      alternativeTriggered && rawWinningFamily?.familyEvidence
+                          ? (selectedFamily?.familyEvidence ?? 0) /
+                            rawWinningFamily.familyEvidence
+                          : null,
+                  originalWinningFamily: rawWinningFamily?.hueFamily ?? null,
+                  selectedFamily: selectedFamily?.hueFamily ?? null,
+                  suitabilityDifference:
+                      alternativeTriggered && rawWinningCluster
+                          ? polishedSelection.selected.backgroundSuitability -
+                            rawWinningCluster.backgroundSuitability
+                          : null,
+                  warmCorrectionApplied: polishedSelection.correction.adjustments.some(
+                      (adjustment) => adjustment.startsWith('warm-'),
+                  ),
+              },
           }
         : null;
 };
