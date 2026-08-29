@@ -6,6 +6,8 @@ const NEUTRAL_CHROMA = 0.05;
 const MEANINGFUL_CHROMA = 0.06;
 const MONOCHROME_SHARE = 0.8;
 const MIN_CLUSTER_COVERAGE = 0.06;
+const DISPLAY_CHROMA_TARGET = 0.15;
+const DISPLAY_LIGHTNESS_TARGET = 0.45;
 
 interface SampledPixel {
     blue: number;
@@ -22,6 +24,8 @@ export interface AlbumDetailArtworkCluster {
     chromaticEnergy: number;
     coverage: number;
     coverageScore: number;
+    displayLightnessScore: number;
+    displayRichnessScore: number;
     energyScore: number;
     freshnessScore: number;
     hueFamily: number;
@@ -65,9 +69,15 @@ export interface AlbumDetailArtworkWarmDecision {
     alternativeFamilyConsidered: number | null;
     alternativeTriggered: boolean;
     evidenceRatio: number | null;
+    cleanerSameFamilyCandidateRgb: string | null;
+    sameFamilyCoverageRatio: number | null;
+    sameFamilyEnergyRatio: number | null;
+    sameFamilyMudPenaltyDifference: number | null;
+    sameFamilySuitabilityDifference: number | null;
     originalWinningFamily: number | null;
     selectedFamily: number | null;
     suitabilityDifference: number | null;
+    topWarmClusterRgb: string | null;
     warmCorrectionApplied: boolean;
 }
 
@@ -226,6 +236,49 @@ const scoreBackgroundSuitability = (scores: {
         1,
     );
 
+const scoreDisplayLightness = (lightness: number) =>
+    1 - clamp(Math.abs(lightness - DISPLAY_LIGHTNESS_TARGET) / 0.28, 0, 1);
+
+const scoreDisplayRichness = (chroma: number) =>
+    1 - clamp(Math.abs(chroma - DISPLAY_CHROMA_TARGET) / 0.14, 0, 1);
+
+const getCleanerWarmClusterDecision = (
+    selected: AlbumDetailArtworkCluster | undefined,
+    clusters: AlbumDetailArtworkCluster[],
+) => {
+    if (!selected || warmHueWeight(selected.tone.hue) <= 0.5) {
+        return null;
+    }
+
+    const highestCoverage = clusters
+        .filter(({ hueFamily }) => hueFamily === selected.hueFamily)
+        .sort((first, second) => second.coverage - first.coverage)[0];
+
+    if (!highestCoverage || highestCoverage === selected) {
+        return null;
+    }
+
+    const coverageRatio = selected.coverage / highestCoverage.coverage;
+    const energyRatio = selected.chromaticEnergy / highestCoverage.chromaticEnergy;
+    const mudPenaltyDifference = highestCoverage.mudPenalty - selected.mudPenalty;
+    const suitabilityDifference =
+        selected.backgroundSuitability - highestCoverage.backgroundSuitability;
+    const applied =
+        (coverageRatio >= 0.35 || energyRatio >= 0.45) &&
+        mudPenaltyDifference >= 0.2 &&
+        selected.richnessScore > highestCoverage.richnessScore &&
+        suitabilityDifference > 0.05;
+
+    return {
+        applied,
+        coverageRatio,
+        energyRatio,
+        highestCoverage,
+        mudPenaltyDifference,
+        suitabilityDifference,
+    };
+};
+
 const toRgb = (red: number, green: number, blue: number) =>
     `rgb(${Math.round(red)}, ${Math.round(green)}, ${Math.round(blue)})`;
 
@@ -259,20 +312,23 @@ const polishSelectedTone = (selected: AlbumDetailArtworkCluster) => {
     const muddyWarm = warmHueWeight(hue) > 0.5 && selected.mudPenalty > 0.2;
 
     if (muddyWarm) {
-        const chromaIncrease = Math.min(0.035, Math.max(0, 0.14 - chroma) * 0.6);
-        const lightnessIncrease = Math.min(0.03, Math.max(0, 0.48 - lightness) * 0.4);
+        const chromaIncrease = Math.min(0.04, Math.max(0, 0.155 - chroma) * 0.65);
+        const lightnessIncrease = Math.min(0.035, Math.max(0, 0.49 - lightness) * 0.45);
 
         chroma += chromaIncrease;
         lightness += lightnessIncrease;
         if (chromaIncrease) adjustments.push('warm-enriched');
         if (lightnessIncrease) adjustments.push('warm-lifted');
-    } else if (lightness > 0.53) {
-        lightness = Math.max(0.5, lightness - 0.05);
-        adjustments.push('deepened');
+    } else if (
+        lightness > 0.68 ||
+        (lightness > 0.62 && (selected.washedOutPenalty > 0.15 || chroma < 0.12))
+    ) {
+        lightness -= Math.min(0.04, (lightness - 0.6) * 0.5);
+        adjustments.push('bright-trimmed');
     }
 
-    if (!muddyWarm && chroma < 0.13) {
-        chroma += Math.min(0.035, (0.13 - chroma) * 0.6);
+    if (!muddyWarm && chroma < DISPLAY_CHROMA_TARGET) {
+        chroma += Math.min(0.04, (DISPLAY_CHROMA_TARGET - chroma) * 0.6);
         adjustments.push('enriched');
     }
 
@@ -324,6 +380,8 @@ const createCluster = (
               chromaticEnergy: 0,
               coverage: pixels.length / sampleCount,
               coverageScore: 0,
+              displayLightnessScore: 0,
+              displayRichnessScore: 0,
               energyScore: 0,
               familyEvidence: 0,
               familyEvidenceNormalized: 0,
@@ -514,6 +572,8 @@ export const analyzeAlbumDetailArtworkPixels = (
                       chromaticEnergy: 0,
                       coverage: neutralShare,
                       coverageScore: 0,
+                      displayLightnessScore: 1,
+                      displayRichnessScore: 0,
                       energyScore: 0,
                       familyEvidence: 0,
                       familyEvidenceNormalized: 0,
@@ -536,8 +596,14 @@ export const analyzeAlbumDetailArtworkPixels = (
                       alternativeTriggered: false,
                       evidenceRatio: null,
                       originalWinningFamily: null,
+                      cleanerSameFamilyCandidateRgb: null,
+                      sameFamilyCoverageRatio: null,
+                      sameFamilyEnergyRatio: null,
+                      sameFamilyMudPenaltyDifference: null,
+                      sameFamilySuitabilityDifference: null,
                       selectedFamily: null,
                       suitabilityDifference: null,
+                      topWarmClusterRgb: null,
                       warmCorrectionApplied: false,
                   },
               }
@@ -578,8 +644,8 @@ export const analyzeAlbumDetailArtworkPixels = (
         .filter((cluster): cluster is AlbumDetailArtworkCluster => Boolean(cluster))
         .filter((cluster) => eligibleFamilies.has(cluster.hueFamily))
         .map((cluster) => {
-            const lightnessScore = 1 - clamp(Math.abs(cluster.tone.lightness - 0.39) / 0.28, 0, 1);
-            const richnessScore = 1 - clamp(Math.abs(cluster.tone.chroma - 0.125) / 0.125, 0, 1);
+            const lightnessScore = scoreDisplayLightness(cluster.tone.lightness);
+            const richnessScore = scoreDisplayRichness(cluster.tone.chroma);
             const coverageScore = clamp(cluster.coverage / 0.3, 0, 1);
             const chromaticEnergy = cluster.coverage * cluster.tone.chroma;
             const energyScore = clamp(chromaticEnergy / 0.03, 0, 1);
@@ -594,9 +660,9 @@ export const analyzeAlbumDetailArtworkPixels = (
             const tinyClusterPenalty =
                 1 - clamp(cluster.coverage / MIN_CLUSTER_COVERAGE, 0, 1);
             const washedOutPenalty =
-                smoothstep(0.53, 0.72, cluster.tone.lightness) *
+                smoothstep(0.58, 0.74, cluster.tone.lightness) *
                 (1 - smoothstep(0.08, 0.12, cluster.tone.chroma));
-            const brightPenalty = smoothstep(0.65, 0.85, cluster.tone.lightness);
+            const brightPenalty = smoothstep(0.68, 0.86, cluster.tone.lightness);
             const mudHue =
                 smoothstep(45, 72, cluster.tone.hue) *
                 (1 - smoothstep(115, 140, cluster.tone.hue));
@@ -631,6 +697,8 @@ export const analyzeAlbumDetailArtworkPixels = (
                 backgroundSuitability,
                 chromaticEnergy,
                 coverageScore,
+                displayLightnessScore: lightnessScore,
+                displayRichnessScore: richnessScore,
                 energyScore,
                 familyEvidence,
                 familyEvidenceNormalized,
@@ -644,7 +712,12 @@ export const analyzeAlbumDetailArtworkPixels = (
         })
         .sort((first, second) => second.score - first.score);
 
+    const cleanerWarmDecision = getCleanerWarmClusterDecision(clusters[0], clusters);
     const polishedSelection = clusters[0] ? polishSelectedTone(clusters[0]) : null;
+
+    if (cleanerWarmDecision?.applied && polishedSelection) {
+        polishedSelection.correction.adjustments.unshift('warm-cleaner-candidate');
+    }
     const rawWinningFamily = [...hueFamilyStats].sort(
         (first, second) => second.rawFamilyEvidence - first.rawFamilyEvidence,
     )[0];
@@ -694,14 +767,25 @@ export const analyzeAlbumDetailArtworkPixels = (
                             rawWinningFamily.familyEvidence
                           : null,
                   originalWinningFamily: rawWinningFamily?.hueFamily ?? null,
+                  cleanerSameFamilyCandidateRgb: cleanerWarmDecision?.applied
+                      ? polishedSelection.correction.originalRgb
+                      : null,
+                  sameFamilyCoverageRatio: cleanerWarmDecision?.coverageRatio ?? null,
+                  sameFamilyEnergyRatio: cleanerWarmDecision?.energyRatio ?? null,
+                  sameFamilyMudPenaltyDifference:
+                      cleanerWarmDecision?.mudPenaltyDifference ?? null,
+                  sameFamilySuitabilityDifference:
+                      cleanerWarmDecision?.suitabilityDifference ?? null,
                   selectedFamily: selectedFamily?.hueFamily ?? null,
                   suitabilityDifference:
                       alternativeTriggered && rawWinningCluster
                           ? polishedSelection.selected.backgroundSuitability -
                             rawWinningCluster.backgroundSuitability
                           : null,
+                  topWarmClusterRgb: cleanerWarmDecision?.highestCoverage.rgb ?? null,
                   warmCorrectionApplied: polishedSelection.correction.adjustments.some(
-                      (adjustment) => adjustment.startsWith('warm-'),
+                      (adjustment) =>
+                          adjustment === 'warm-enriched' || adjustment === 'warm-lifted',
                   ),
               },
           }
