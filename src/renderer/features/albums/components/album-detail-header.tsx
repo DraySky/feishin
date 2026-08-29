@@ -16,7 +16,13 @@ import { useSetFavorite } from '/@/renderer/features/shared/hooks/use-set-favori
 import { useSetRating } from '/@/renderer/features/shared/hooks/use-set-rating';
 import { songsQueries } from '/@/renderer/features/songs/api/songs-api';
 import { AppRoute } from '/@/renderer/router/routes';
-import { useCurrentServer, useShowFavorites, useShowRatings } from '/@/renderer/store';
+import {
+    useCurrentServer,
+    usePlayerShuffle,
+    useQueuePlaybackContext,
+    useShowFavorites,
+    useShowRatings,
+} from '/@/renderer/store';
 import { useArtistRadioCount, usePlayButtonBehavior } from '/@/renderer/store/settings.store';
 import { formatDurationString, formatPartialIsoDateUTC, formatSizeString } from '/@/renderer/utils';
 import { normalizeReleaseTypes } from '/@/renderer/utils/normalize-release-types';
@@ -25,7 +31,7 @@ import { Separator } from '/@/shared/components/separator/separator';
 import { Stack } from '/@/shared/components/stack/stack';
 import { Text } from '/@/shared/components/text/text';
 import { LibraryItem, ServerType } from '/@/shared/types/domain-types';
-import { Play } from '/@/shared/types/types';
+import { Play, PlayerShuffle } from '/@/shared/types/types';
 
 interface AlbumDetailHeaderProps {
     heroRef?: Ref<HTMLDivElement>;
@@ -52,8 +58,17 @@ const AlbumDetailHeaderBase = (
         (detailQuery?.data?._serverType === ServerType.NAVIDROME ||
             detailQuery?.data?._serverType === ServerType.SUBSONIC);
 
-    const { addToQueueByData, addToQueueByFetch } = usePlayer();
+    const { addToQueueByData, addToQueueByFetch, toggleShuffle } = usePlayer();
     const playButtonBehavior = usePlayButtonBehavior();
+    const playerShuffle = usePlayerShuffle();
+    const queuePlaybackContext = useQueuePlaybackContext();
+    const isAlbumPlaybackLinked =
+        queuePlaybackContext?.source === 'albumDetail' &&
+        queuePlaybackContext.albumId === albumId &&
+        queuePlaybackContext.serverId === server?.id;
+    const shuffleActive = isAlbumPlaybackLinked
+        ? playerShuffle === PlayerShuffle.TRACK
+        : albumShuffleOnPlay;
 
     useEffect(() => {
         setAlbumShuffleOnPlay(false);
@@ -99,6 +114,23 @@ const AlbumDetailHeaderBase = (
     const handlePlay = (type?: Play) => {
         if (!server?.id || !albumId) return;
         addToQueueByFetch(server.id, [albumId], LibraryItem.ALBUM, type || playButtonBehavior);
+    };
+
+    const handleAlbumPlay = () => {
+        if (!server?.id || !albumId) return;
+
+        if (albumShuffleOnPlay || playButtonBehavior === Play.NOW) {
+            addToQueueByFetch(server.id, [albumId], LibraryItem.ALBUM, Play.NOW, {
+                albumDetail: {
+                    albumId,
+                    serverId: server.id,
+                    shuffle: albumShuffleOnPlay,
+                },
+            });
+            return;
+        }
+
+        handlePlay();
     };
 
     const handleMoreOptions = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -297,13 +329,17 @@ const AlbumDetailHeaderBase = (
                 onAlbumRadio={handleAlbumRadio}
                 onFavorite={handleFavorite}
                 onMore={handleMoreOptions}
-                onPlay={() =>
-                    albumShuffleOnPlay ? handlePlay(Play.SHUFFLE) : handlePlay()
-                }
+                onPlay={handleAlbumPlay}
                 onRating={handleUpdateRating}
-                onShuffle={() => setAlbumShuffleOnPlay((active) => !active)}
+                onShuffle={() => {
+                    if (isAlbumPlaybackLinked) {
+                        toggleShuffle();
+                    } else {
+                        setAlbumShuffleOnPlay((active) => !active);
+                    }
+                }}
                 rating={detailQuery?.data?.userRating || 0}
-                shuffleActive={albumShuffleOnPlay}
+                shuffleActive={shuffleActive}
             />
         </Stack>
     );

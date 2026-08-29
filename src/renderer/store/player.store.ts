@@ -28,6 +28,10 @@ import {
 
 export interface PlayerState extends Actions, State {}
 
+export type QueuePlaybackContext =
+    | { albumId: string; serverId: string; source: 'albumDetail' }
+    | null;
+
 export type QueueGroupingProperty = keyof QueueSong;
 
 interface Actions {
@@ -64,6 +68,10 @@ interface Actions {
     moveSelectedToBottom: (items: QueueSong[]) => void;
     moveSelectedToNext: (items: QueueSong[]) => void;
     moveSelectedToTop: (items: QueueSong[]) => void;
+    replaceQueueFromAlbumDetail: (
+        items: Song[],
+        context: { albumId: string; serverId: string; shuffle: boolean },
+    ) => void;
     setCrossfadeDuration: (duration: number) => void;
     setCrossfadeStyle: (style: CrossfadeStyle) => void;
     setPauseOnNextSongEnd: (value: boolean) => void;
@@ -103,6 +111,7 @@ interface State {
         volume: number;
     };
     queue: QueueData;
+    queuePlaybackContext: QueuePlaybackContext;
 }
 
 // Calculates the next song based on repeat mode and current position
@@ -333,6 +342,10 @@ function regenerateShuffledIndexesIfNeeded(state: {
     }
 }
 
+function invalidateQueuePlaybackContext(state: State): void {
+    state.queuePlaybackContext = null;
+}
+
 const initialState: State = {
     hydrated: false,
     player: {
@@ -355,6 +368,7 @@ const initialState: State = {
         shuffled: [],
         songs: {},
     },
+    queuePlaybackContext: null,
 };
 
 export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
@@ -373,6 +387,7 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                     switch (playType) {
                         case Play.LAST: {
                             set((state) => {
+                                invalidateQueuePlaybackContext(state);
                                 newItems.forEach((item) => {
                                     state.queue.songs[item._uniqueId] = item;
                                 });
@@ -398,6 +413,7 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                         }
                         case Play.LAST_SHUFFLE: {
                             set((state) => {
+                                invalidateQueuePlaybackContext(state);
                                 newItems.forEach((item) => {
                                     state.queue.songs[item._uniqueId] = item;
                                 });
@@ -426,6 +442,7 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                         }
                         case Play.NEXT: {
                             set((state) => {
+                                invalidateQueuePlaybackContext(state);
                                 const currentShuffledIndex = state.player.index;
                                 newItems.forEach((item) => {
                                     state.queue.songs[item._uniqueId] = item;
@@ -469,6 +486,7 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                         }
                         case Play.NEXT_SHUFFLE: {
                             set((state) => {
+                                invalidateQueuePlaybackContext(state);
                                 const currentShuffledIndex = state.player.index;
                                 newItems.forEach((item) => {
                                     state.queue.songs[item._uniqueId] = item;
@@ -516,6 +534,7 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                             clearActiveRadio();
 
                             set((state) => {
+                                invalidateQueuePlaybackContext(state);
                                 newItems.forEach((item) => {
                                     state.queue.songs[item._uniqueId] = item;
                                 });
@@ -572,6 +591,7 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                             clearActiveRadio();
 
                             set((state) => {
+                                invalidateQueuePlaybackContext(state);
                                 newItems.forEach((item) => {
                                     state.queue.songs[item._uniqueId] = item;
                                 });
@@ -605,6 +625,7 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                         : undefined;
 
                     set((state) => {
+                        invalidateQueuePlaybackContext(state);
                         // Add new songs to songs object
                         newItems.forEach((item) => {
                             state.queue.songs[item._uniqueId] = item;
@@ -721,6 +742,7 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                 },
                 clearQueue: () => {
                     set((state) => {
+                        invalidateQueuePlaybackContext(state);
                         state.player.index = -1;
                         state.queue.default = [];
                         state.queue.shuffled = [];
@@ -729,6 +751,7 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                 },
                 clearSelected: (items: QueueSong[]) => {
                     set((state) => {
+                        invalidateQueuePlaybackContext(state);
                         const uniqueIds = new Set(items.map((item) => item._uniqueId));
 
                         const indexesToRemove = new Set<number>();
@@ -1369,6 +1392,7 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                     const itemUniqueIds = items.map((item) => item._uniqueId);
 
                     set((state) => {
+                        invalidateQueuePlaybackContext(state);
                         const existingIds = new Set(Object.keys(state.queue.songs));
 
                         // Add new songs to songs object (avoiding duplicates)
@@ -1400,6 +1424,7 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                 },
                 moveSelectedToBottom: (items: QueueSong[]) => {
                     set((state) => {
+                        invalidateQueuePlaybackContext(state);
                         const uniqueIds = items.map((item) => item._uniqueId);
 
                         // Add new songs to songs object
@@ -1420,6 +1445,7 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                 },
                 moveSelectedToNext: (items: QueueSong[]) => {
                     set((state) => {
+                        invalidateQueuePlaybackContext(state);
                         const uniqueIds = items.map((item) => item._uniqueId);
 
                         // Add new songs to songs object
@@ -1454,6 +1480,7 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                 },
                 moveSelectedToTop: (items: QueueSong[]) => {
                     set((state) => {
+                        invalidateQueuePlaybackContext(state);
                         const uniqueIds = items.map((item) => item._uniqueId);
 
                         // Add new songs to songs object
@@ -1477,6 +1504,7 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                     const newUniqueIds = newItems.map((item) => item._uniqueId);
 
                     set((state) => {
+                        invalidateQueuePlaybackContext(state);
                         newItems.forEach((item) => {
                             state.queue.songs[item._uniqueId] = item;
                         });
@@ -1491,6 +1519,43 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                         data: items,
                         index: index ?? 0,
                         position: position ?? 0,
+                    });
+                },
+                replaceQueueFromAlbumDetail: (items, context) => {
+                    const newItems = items.map(toQueueSong);
+                    if (newItems.length === 0) return;
+
+                    const newUniqueIds = newItems.map((item) => item._uniqueId);
+                    const shuffled = context.shuffle
+                        ? generateShuffledIndexes(newUniqueIds.length)
+                        : [];
+                    const firstQueueIndex = context.shuffle ? shuffled[0] : 0;
+                    const firstSongUniqueId = newUniqueIds[firstQueueIndex];
+
+                    clearActiveRadio();
+                    set((state) => {
+                        state.queue.songs = Object.fromEntries(
+                            newItems.map((item) => [item._uniqueId, item]),
+                        );
+                        state.queue.default = newUniqueIds;
+                        state.queue.shuffled = shuffled;
+                        state.queuePlaybackContext = {
+                            albumId: context.albumId,
+                            serverId: context.serverId,
+                            source: 'albumDetail',
+                        };
+                        state.player.index = 0;
+                        state.player.playerNum = 1;
+                        state.player.shuffle = context.shuffle
+                            ? PlayerShuffle.TRACK
+                            : PlayerShuffle.NONE;
+                        state.player.status = PlayerStatus.PLAYING;
+                        setTimestampStore(0);
+                    });
+
+                    eventEmitter.emit('PLAYER_PLAY', {
+                        id: firstSongUniqueId,
+                        index: 0,
                     });
                 },
                 ...initialState,
@@ -1583,6 +1648,7 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                 },
                 shuffleAll: () => {
                     set((state) => {
+                        invalidateQueuePlaybackContext(state);
                         const queue = state.getQueue();
                         const currentIndex = state.player.index;
                         const currentSong = queue.items[currentIndex];
@@ -1621,6 +1687,7 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                 },
                 shuffleSelected: (items: QueueSong[]) => {
                     set((state) => {
+                        invalidateQueuePlaybackContext(state);
                         const itemUniqueIds = items.map((item) => item._uniqueId);
 
                         // Find positions of selected items in the default queue
@@ -1804,6 +1871,7 @@ export const usePlayerActions = () => {
             moveSelectedToBottom: state.moveSelectedToBottom,
             moveSelectedToNext: state.moveSelectedToNext,
             moveSelectedToTop: state.moveSelectedToTop,
+            replaceQueueFromAlbumDetail: state.replaceQueueFromAlbumDetail,
             setCrossfadeDuration: state.setCrossfadeDuration,
             setCrossfadeStyle: state.setCrossfadeStyle,
             setPauseOnNextSongEnd: state.setPauseOnNextSongEnd,
@@ -2196,6 +2264,10 @@ export const updateQueueSong = (songId: string, updatedSong: Song) => {
 
 export const useCurrentPlaylistContextId = () => {
     return usePlayerStoreBase((state) => state.getCurrentSong()?._contextPlaylistId ?? null);
+};
+
+export const useQueuePlaybackContext = () => {
+    return usePlayerStoreBase((state) => state.queuePlaybackContext);
 };
 
 export const usePlayerMuted = () => {

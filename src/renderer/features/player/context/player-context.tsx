@@ -54,6 +54,9 @@ export interface PlayerContext {
         id: string[],
         itemType: LibraryItem,
         type: AddToQueueType,
+        options?: {
+            albumDetail?: { albumId: string; serverId: string; shuffle: boolean };
+        },
     ) => void;
     addToQueueByListQuery: (
         serverId: string,
@@ -312,7 +315,15 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
     );
 
     const addToQueueByFetch = useCallback(
-        async (serverId: string, id: string[], itemType: LibraryItem, type: AddToQueueType) => {
+        async (
+            serverId: string,
+            id: string[],
+            itemType: LibraryItem,
+            type: AddToQueueType,
+            options?: {
+                albumDetail?: { albumId: string; serverId: string; shuffle: boolean };
+            },
+        ) => {
             let toastId: null | string = null;
             const fetchId = nanoid();
 
@@ -386,7 +397,12 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
                 }
 
                 const addToQueue = () => {
-                    if (typeof type === 'object' && 'edge' in type && type.edge !== null) {
+                    if (options?.albumDetail) {
+                        storeActions.replaceQueueFromAlbumDetail(
+                            filteredSongs,
+                            options.albumDetail,
+                        );
+                    } else if (typeof type === 'object' && 'edge' in type && type.edge !== null) {
                         const edge = type.edge === 'top' ? 'top' : 'bottom';
                         storeActions.addToQueueByUniqueId(filteredSongs, type.uniqueId, edge);
                     } else {
@@ -394,7 +410,7 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
                     }
                 };
 
-                if (isReplaceQueueType(type)) {
+                if (options?.albumDetail || isReplaceQueueType(type)) {
                     confirmQueueChange(addToQueue);
                 } else {
                     addToQueue();
