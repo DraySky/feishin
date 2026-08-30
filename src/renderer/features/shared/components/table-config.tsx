@@ -278,6 +278,10 @@ export const TableConfig = ({
                                 value: 'compact',
                             },
                             {
+                                label: t('table.config.general.size_medium'),
+                                value: 'medium',
+                            },
+                            {
                                 label: t('table.config.general.size_default'),
                                 value: 'default',
                             },
@@ -288,7 +292,7 @@ export const TableConfig = ({
                         ]}
                         onChange={(value) =>
                             setTableUpdate({
-                                size: value as 'compact' | 'default' | 'large',
+                                size: value as 'compact' | 'medium' | 'default' | 'large',
                             })
                         }
                         size="sm"

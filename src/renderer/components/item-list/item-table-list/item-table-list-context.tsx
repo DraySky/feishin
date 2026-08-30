@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 
 import React, {
     createContext,
@@ -34,11 +34,12 @@ export type ItemTableListConfig = {
     enableVerticalBorders: boolean;
     getRowHeight: (index: number, cellProps: TableItemProps) => number;
     groups?: ItemTableListGroupHeader[];
+    headerActions?: ReactNode;
     internalState: ItemListStateActions;
     itemType: LibraryItem;
     playerContext: PlayerContext;
     playlistId?: string;
-    size: 'compact' | 'default' | 'large';
+    size: 'compact' | 'medium' | 'default' | 'large';
     startRowIndex?: number;
     tableId: string;
 };

@@ -6,6 +6,7 @@ import React, {
     type JSXElementConstructor,
     memo,
     ReactElement,
+    ReactNode,
     Ref,
     RefObject,
     useCallback,
@@ -122,6 +123,7 @@ const hasRequiredStateItemProperties = (
 
 export enum TableItemSize {
     COMPACT = 40,
+    MEDIUM = 50,
     DEFAULT = 66,
     LARGE = 88,
 }
@@ -402,6 +404,7 @@ const VirtualizedTableGrid = ({
             getRowItem,
             groupHeaderInfoByRowIndex,
             groups: tableConfig.groups,
+            headerActions: tableConfig.headerActions,
             hasAlbumGroupColumn: parsedColumns.some((col) => col.id === TableColumn.ALBUM_GROUP),
             internalState: tableConfig.internalState,
             itemType: tableConfig.itemType,
@@ -781,6 +784,7 @@ export interface TableItemProps {
     getRowItem?: (rowIndex: number) => null | undefined | unknown;
     groupHeaderInfoByRowIndex?: Map<number, { groupIndex: number; startDataIndex: number }>;
     groups?: TableGroupHeader[];
+    headerActions?: ReactNode;
     hasAlbumGroupColumn?: boolean;
     internalState: ItemListStateActions;
     itemType: ItemTableListProps['itemType'];
@@ -824,6 +828,7 @@ interface ItemTableListProps {
     getLoadedItems?: () => unknown[];
     getRowId?: ((item: unknown) => string) | string;
     groups?: TableGroupHeader[];
+    headerActions?: ReactNode;
     headerHeight?: number;
     initialTop?: {
         behavior?: 'auto' | 'smooth';
@@ -843,7 +848,7 @@ interface ItemTableListProps {
     overrideControls?: Partial<ItemControls>;
     ref?: Ref<ItemListHandle>;
     rowHeight?: ((index: number, cellProps: TableItemProps) => number) | number;
-    size?: 'compact' | 'default' | 'large';
+    size?: 'compact' | 'medium' | 'default' | 'large';
     startRowIndex?: number;
 }
 
@@ -891,7 +896,7 @@ const ItemTableListStickyUI = memo(
         pinnedRowRef: RefObject<HTMLDivElement | null>;
         rowHeight?: ((index: number, cellProps: TableItemProps) => number) | number;
         rowRef: RefObject<HTMLDivElement | null>;
-        size: 'compact' | 'default' | 'large';
+        size: 'compact' | 'medium' | 'default' | 'large';
         stickyHeaderItemProps: TableItemProps;
         totalColumnCount: number;
     }) => {
@@ -1263,6 +1268,7 @@ const BaseItemTableList = ({
     getLoadedItems,
     getRowId,
     groups,
+    headerActions,
     headerHeight = 40,
     initialTop,
     itemCount,
@@ -1422,6 +1428,8 @@ const BaseItemTableList = ({
             const height =
                 size === 'compact'
                     ? TableItemSize.COMPACT
+                    : size === 'medium'
+                      ? TableItemSize.MEDIUM
                     : size === 'large'
                       ? TableItemSize.LARGE
                       : TableItemSize.DEFAULT;
@@ -1610,6 +1618,8 @@ const BaseItemTableList = ({
             const height =
                 size === 'compact'
                     ? TableItemSize.COMPACT
+                    : size === 'medium'
+                      ? TableItemSize.MEDIUM
                     : size === 'large'
                       ? TableItemSize.LARGE
                       : TableItemSize.DEFAULT;
@@ -1723,6 +1733,7 @@ const BaseItemTableList = ({
             enableVerticalBorders,
             getRowHeight,
             groups,
+            headerActions,
             internalState,
             itemType,
             pinnedLeftColumnCount,
@@ -1751,6 +1762,7 @@ const BaseItemTableList = ({
             enableVerticalBorders,
             getRowHeight,
             groups,
+            headerActions,
             internalState,
             itemType,
             onColumnReordered,
@@ -1801,6 +1813,7 @@ const BaseItemTableList = ({
             enableVerticalBorders,
             getRowHeight,
             groups,
+            headerActions,
             internalState,
             itemType,
             playerContext,
@@ -1825,6 +1838,7 @@ const BaseItemTableList = ({
             enableVerticalBorders,
             getRowHeight,
             groups,
+            headerActions,
             internalState,
             itemType,
             playerContext,

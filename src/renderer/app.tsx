@@ -7,7 +7,16 @@ import '@mantine/core/styles.css';
 import '@mantine/dates/styles.css';
 import '@mantine/notifications/styles.css';
 import isElectron from 'is-electron';
-import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import {
+    lazy,
+    memo,
+    Suspense,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 
 import i18n from '/@/i18n/i18n';
 import { WebAudioContext } from '/@/renderer/features/player/context/webaudio-context';
@@ -31,6 +40,7 @@ import '/@/shared/styles/global.css';
 import { PlayerProvider } from '/@/renderer/features/player/context/player-context';
 import { AudioPlayers } from '/@/renderer/features/player/components/audio-players';
 import { ReleaseNotesModal } from '/@/renderer/release-notes-modal';
+import customOverridesCss from '/@/renderer/styles/custom-overrides.css?raw';
 
 const UpdateAvailableDialog = lazy(() =>
     import('./update-available-dialog').then((module) => ({
@@ -117,6 +127,7 @@ const AppEffects = () => (
         <UpdateCheckEffect />
         <CustomCssFileEffect />
         <CssSettingsEffect />
+        <ForkCssOverridesEffect />
         <GlobalShortcutsEffect />
         <LanguageEffect />
         <NativeMenuSyncEffect />
@@ -125,6 +136,22 @@ const AppEffects = () => (
         <InputFocusEffect />
     </>
 );
+
+const ForkCssOverridesEffect = () => {
+    useLayoutEffect(() => {
+        const selector = 'style[data-feishin-fork-overrides]';
+        const style =
+            document.querySelector<HTMLStyleElement>(selector) ?? document.createElement('style');
+
+        style.dataset.feishinForkOverrides = 'true';
+        style.textContent = customOverridesCss;
+        document.body.appendChild(style);
+
+        return () => style.remove();
+    }, [customOverridesCss]);
+
+    return null;
+};
 
 const SyncSettingsEffect = () => {
     useSyncSettingsToMain();

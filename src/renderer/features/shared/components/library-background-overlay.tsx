@@ -95,7 +95,7 @@ export const LibraryBackgroundImage = ({ blur, headerRef, imageUrl }: LibraryBac
     );
 };
 
-const useHeaderHeight = (headerRef: React.RefObject<HTMLDivElement | null>) => {
+export const useHeaderHeight = (headerRef: React.RefObject<HTMLDivElement | null>) => {
     const [headerHeight, setHeaderHeight] = useState<number>(0);
 
     useEffect(() => {

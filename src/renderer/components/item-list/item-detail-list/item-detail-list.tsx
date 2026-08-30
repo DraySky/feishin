@@ -132,7 +132,7 @@ interface RowData {
     registerSongs: (albumId: string, songs: Song[]) => void;
     songsByAlbumId?: Record<string, Song[]>;
     trackColumns: ItemTableListColumnConfig[];
-    trackTableSize: 'compact' | 'default' | 'large';
+    trackTableSize: 'compact' | 'medium' | 'default' | 'large';
 }
 
 interface TrackRowProps {
@@ -153,7 +153,7 @@ interface TrackRowProps {
         item: Song;
     }) => void;
     rowIndex: number;
-    size: 'compact' | 'default' | 'large';
+    size: 'compact' | 'medium' | 'default' | 'large';
     song: Song;
 }
 
@@ -639,7 +639,7 @@ interface ItemDetailSkeletonRowProps {
     enableAlternateRowColors: boolean;
     enableHorizontalBorders: boolean;
     enableVerticalBorders: boolean;
-    trackTableSize: 'compact' | 'default' | 'large';
+    trackTableSize: 'compact' | 'medium' | 'default' | 'large';
 }
 
 const ItemDetailSkeletonRow = memo(
@@ -688,7 +688,9 @@ const ItemDetailSkeletonRow = memo(
                                         [styles.trackRowHorizontalBorderVisible]:
                                             enableHorizontalBorders && i > 0,
                                         [styles.trackRowSizeCompact]: trackTableSize === 'compact',
-                                        [styles.trackRowSizeDefault]: trackTableSize === 'default',
+                                        [styles.trackRowSizeDefault]:
+                                            trackTableSize === 'medium' ||
+                                            trackTableSize === 'default',
                                         [styles.trackRowSizeLarge]: trackTableSize === 'large',
                                         [styles.trackRowWithHorizontalBorder]: i > 0,
                                     })}
@@ -1141,7 +1143,7 @@ interface DetailListHeaderProps {
     onColumnResized?: (columnId: TableColumn, width: number) => void;
     tableId: string;
     trackColumns: ItemTableListColumnConfig[];
-    trackTableSize: 'compact' | 'default' | 'large';
+    trackTableSize: 'compact' | 'medium' | 'default' | 'large';
 }
 
 const colTypeToAlignMap = {
@@ -1182,7 +1184,8 @@ const DetailListHeader = memo(
                     <div
                         className={clsx(styles.tracksTableHeader, {
                             [styles.tracksTableHeaderSizeCompact]: trackTableSize === 'compact',
-                            [styles.tracksTableHeaderSizeDefault]: trackTableSize === 'default',
+                            [styles.tracksTableHeaderSizeDefault]:
+                                trackTableSize === 'medium' || trackTableSize === 'default',
                             [styles.tracksTableHeaderSizeLarge]: trackTableSize === 'large',
                         })}
                         role="row"

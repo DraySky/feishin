@@ -1,0 +1,54 @@
+.route-surface {
+    position: relative;
+    min-height: 100%;
+    background: var(--theme-colors-background);
+    isolation: isolate;
+}
+
+.hero-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 0;
+    width: 100%;
+    pointer-events: none;
+    user-select: none;
+    background-color: var(--album-color-base);
+    background-image: linear-gradient(
+        to bottom,
+        var(--album-color-hero-top) 0%,
+        var(--album-color-hero-mid) 55%,
+        var(--album-color-hero-bottom) 100%
+    );
+}
+
+.background-continuation {
+    position: absolute;
+    left: 0;
+    z-index: 0;
+    width: 100%;
+    pointer-events: none;
+    user-select: none;
+    background: linear-gradient(
+        to bottom,
+        var(--album-color-continuation-start) 0%,
+        var(--album-color-continuation-mid) var(--album-gradient-mid-stop),
+        var(--album-color-continuation-faint) var(--album-gradient-faint-stop),
+        var(--album-color-continuation-fade-76) var(--album-gradient-fade-76-stop),
+        var(--album-color-continuation-fade-64) var(--album-gradient-fade-64-stop),
+        var(--album-color-continuation-fade-52) var(--album-gradient-fade-52-stop),
+        var(--album-color-continuation-fade-40) var(--album-gradient-fade-40-stop),
+        var(--album-color-continuation-fade-30) var(--album-gradient-fade-30-stop),
+        var(--album-color-continuation-fade-21) var(--album-gradient-fade-21-stop),
+        var(--album-color-continuation-fade-14) var(--album-gradient-fade-14-stop),
+        var(--album-color-continuation-fade-8) var(--album-gradient-fade-8-stop),
+        var(--album-color-continuation-fade-4) var(--album-gradient-fade-4-stop),
+        transparent var(--album-gradient-transparent-stop),
+        transparent 100%
+    );
+}
+
+.foreground {
+    position: relative;
+    z-index: 1;
+}

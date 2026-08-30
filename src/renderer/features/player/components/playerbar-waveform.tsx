@@ -1,7 +1,7 @@
 import { useWavesurfer } from '@wavesurfer/react';
 import formatDuration from 'format-duration';
 import { AnimatePresence, motion } from 'motion/react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { CustomPlayerbarSlider } from './playerbar-slider';
 import styles from './playerbar-waveform.module.css';
@@ -16,7 +16,6 @@ import {
     usePlayerSong,
     usePlayerTimestamp,
 } from '/@/renderer/store';
-import { useAppThemeColors, useColorScheme } from '/@/renderer/themes/use-app-theme';
 import { Text } from '/@/shared/components/text/text';
 
 export const PlayerbarWaveform = () => {
@@ -44,18 +43,8 @@ export const PlayerbarWaveform = () => {
         format: 'mp3',
     });
 
-    const { color } = useAppThemeColors();
-    const primaryColor = (color['--theme-colors-primary'] as string) || 'rgb(53, 116, 252)';
-
-    const colorScheme = useColorScheme();
-
-    const waveColor = useMemo(() => {
-        return colorScheme === 'dark' ? 'rgba(96, 96, 96, 1)' : 'rgba(96, 96, 96, 1)';
-    }, [colorScheme]);
-
-    const cursorColor = useMemo(() => {
-        return colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)';
-    }, [colorScheme]);
+    const cursorColor = 'rgba(255, 255, 255, 0.5)';
+    const waveColor = 'rgba(96, 96, 96, 1)';
 
     const { wavesurfer } = useWavesurfer({
         barAlign:
@@ -71,7 +60,7 @@ export const PlayerbarWaveform = () => {
         interact: false,
         media: audioElementRef.current,
         normalize: playerbarSlider?.stretched ?? false,
-        progressColor: primaryColor,
+        progressColor: 'rgb(255, 255, 255)',
         waveColor,
     });
 

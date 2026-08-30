@@ -1354,6 +1354,7 @@
                 "size": "$t(common.size)",
                 "size_default": "Default",
                 "size_compact": "Compact",
+                "size_medium": "Medium",
                 "size_large": "Large",
                 "tableColumns": "Table columns",
                 "pagination": "Pagination",

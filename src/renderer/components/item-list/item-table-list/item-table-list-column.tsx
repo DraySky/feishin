@@ -540,6 +540,7 @@ export function isLastInAlbumGroup(
 
 function baseRowHeightForSize(size: ItemTableListColumn['size']): number {
     if (size === 'compact') return TableItemSize.COMPACT;
+    if (size === 'medium') return TableItemSize.MEDIUM;
     if (size === 'large') return TableItemSize.LARGE;
     return TableItemSize.DEFAULT;
 }
@@ -1237,6 +1238,9 @@ export const TableColumnHeaderContainer = (
             >
                 {columnLabelMap[props.type]}
             </Text>
+            {props.columnIndex === props.columns.length - 1 && props.headerActions && (
+                <div className={styles.headerActions}>{props.headerActions}</div>
+            )}
             {props.enableColumnResize && (
                 <ColumnResizeHandle
                     columnId={props.type}

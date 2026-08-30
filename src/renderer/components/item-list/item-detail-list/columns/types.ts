@@ -10,6 +10,6 @@ export interface ItemDetailListCellProps {
     isRowHovered?: boolean;
     onFavoriteClick?: (song: Song) => void;
     rowIndex?: number;
-    size?: 'compact' | 'default' | 'large';
+    size?: 'compact' | 'medium' | 'default' | 'large';
     song: Song;
 }
