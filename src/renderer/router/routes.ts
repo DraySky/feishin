@@ -1,5 +1,6 @@
 export enum AppRoute {
     ACTION_REQUIRED = '/action-required',
+    DEV_ALBUM_COLOR_LAB = '/dev/album-color-lab',
     EXPLORE = '/explore',
     FAKE_LIBRARY_ALBUM_DETAILS = '/library/albums/dummy/:albumId',
     FAVORITES = '/favorites',
