@@ -69,6 +69,41 @@
     filter: brightness(1.06);
     transform: scale(1.03);
 }
+
+.right-grid-item :global(.mantine-ActionIcon-root[data-variant='subtle']) {
+    transform: none;
+    scale: none;
+    translate: none;
+    transition:
+        color 140ms ease,
+        filter 140ms ease;
+}
+
+.right-grid-item :global(.mantine-ActionIcon-root[data-variant='subtle']):hover,
+.right-grid-item :global(.mantine-ActionIcon-root[data-variant='subtle']):active {
+    filter: none;
+    transform: none;
+    scale: none;
+    translate: none;
+}
+
+.right-grid-item :global(.mantine-ActionIcon-root[data-variant='subtle']) svg {
+    transform-origin: center;
+    transition:
+        color 140ms ease,
+        filter 140ms ease,
+        transform 140ms ease;
+}
+
+.right-grid-item :global(.mantine-ActionIcon-root[data-variant='subtle']):hover svg {
+    filter: brightness(1.12);
+    transform: scale(1.06);
+}
+
+.right-grid-item :global(.mantine-ActionIcon-root[data-variant='subtle']):active svg {
+    filter: brightness(1.06);
+    transform: scale(0.96);
+}
 /* stylelint-enable selector-class-pattern */
 
 .controls-grid {

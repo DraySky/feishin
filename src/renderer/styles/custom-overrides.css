@@ -944,7 +944,7 @@ transition-property:border-color, box-shadow, background-color;
 transition-behavior:normal, normal, normal;
 }
 
-.fs-sidebar-module-accordion-content a:not(.fs-sidebar-playlist-list-module-row):hover {
+.fs-sidebar-module-accordion-content a:not(.fs-sidebar-playlist-list-module-row, .fs-sidebar-item-module-link):hover {
 transform:translateX(3px);
 }
 

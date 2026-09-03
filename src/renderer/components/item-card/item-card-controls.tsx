@@ -277,7 +277,10 @@ export const ItemCardControls = ({
                     </PlayTooltip>
                     <PlayTooltip type={Play.NEXT}>
                         <PlayButton
-                            classNames={clsx(styles.playButton, styles.secondary, styles.left)}
+                            classNames={clsx(styles.playButton, styles.secondary, styles.left, {
+                                [styles.albumPlayButton]: itemType === LibraryItem.ALBUM,
+                                [styles.albumSidePlayButton]: itemType === LibraryItem.ALBUM,
+                            })}
                             icon="mediaPlayNext"
                             onClick={playNextHandler}
                             onLongPress={playNextShuffleHandler}
@@ -285,7 +288,10 @@ export const ItemCardControls = ({
                     </PlayTooltip>
                     <PlayTooltip type={Play.LAST}>
                         <PlayButton
-                            classNames={clsx(styles.playButton, styles.secondary, styles.right)}
+                            classNames={clsx(styles.playButton, styles.secondary, styles.right, {
+                                [styles.albumPlayButton]: itemType === LibraryItem.ALBUM,
+                                [styles.albumSidePlayButton]: itemType === LibraryItem.ALBUM,
+                            })}
                             icon="mediaPlayLast"
                             onClick={playLastHandler}
                             onLongPress={playLastShuffleHandler}
