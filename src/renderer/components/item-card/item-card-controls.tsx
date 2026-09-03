@@ -268,7 +268,9 @@ export const ItemCardControls = ({
                 <Tooltip.Group>
                     <PlayTooltip type={Play.NOW}>
                         <PlayButton
-                            classNames={clsx(styles.playButton, styles.primary)}
+                            classNames={clsx(styles.playButton, styles.primary, {
+                                [styles.albumPlayButton]: itemType === LibraryItem.ALBUM,
+                            })}
                             onClick={playNowHandler}
                             onLongPress={playShuffleHandler}
                         />

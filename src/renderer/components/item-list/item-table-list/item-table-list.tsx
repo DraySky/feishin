@@ -123,9 +123,9 @@ const hasRequiredStateItemProperties = (
 
 export enum TableItemSize {
     COMPACT = 40,
-    MEDIUM = 50,
     DEFAULT = 66,
     LARGE = 88,
+    MEDIUM = 50,
 }
 
 const ItemTableScrollShadowLeft = memo(function ItemTableScrollShadowLeft({
@@ -404,9 +404,10 @@ const VirtualizedTableGrid = ({
             getRowItem,
             groupHeaderInfoByRowIndex,
             groups: tableConfig.groups,
-            headerActions: tableConfig.headerActions,
             hasAlbumGroupColumn: parsedColumns.some((col) => col.id === TableColumn.ALBUM_GROUP),
+            headerActions: tableConfig.headerActions,
             internalState: tableConfig.internalState,
+            isAlbumDetail: tableConfig.isAlbumDetail,
             itemType: tableConfig.itemType,
             pinnedLeftColumnCount,
             pinnedLeftColumnWidths,
@@ -784,9 +785,10 @@ export interface TableItemProps {
     getRowItem?: (rowIndex: number) => null | undefined | unknown;
     groupHeaderInfoByRowIndex?: Map<number, { groupIndex: number; startDataIndex: number }>;
     groups?: TableGroupHeader[];
-    headerActions?: ReactNode;
     hasAlbumGroupColumn?: boolean;
+    headerActions?: ReactNode;
     internalState: ItemListStateActions;
+    isAlbumDetail?: ItemTableListProps['isAlbumDetail'];
     itemType: ItemTableListProps['itemType'];
     onRowClick?: (item: any, event: React.MouseEvent<HTMLDivElement>) => void;
     pinnedLeftColumnCount?: number;
@@ -835,6 +837,7 @@ interface ItemTableListProps {
         to: number;
         type: 'index' | 'offset';
     };
+    isAlbumDetail?: boolean;
     itemCount?: number;
     itemType: LibraryItem;
     onColumnReordered?: (
@@ -848,7 +851,7 @@ interface ItemTableListProps {
     overrideControls?: Partial<ItemControls>;
     ref?: Ref<ItemListHandle>;
     rowHeight?: ((index: number, cellProps: TableItemProps) => number) | number;
-    size?: 'compact' | 'medium' | 'default' | 'large';
+    size?: 'compact' | 'default' | 'large' | 'medium';
     startRowIndex?: number;
 }
 
@@ -896,7 +899,7 @@ const ItemTableListStickyUI = memo(
         pinnedRowRef: RefObject<HTMLDivElement | null>;
         rowHeight?: ((index: number, cellProps: TableItemProps) => number) | number;
         rowRef: RefObject<HTMLDivElement | null>;
-        size: 'compact' | 'medium' | 'default' | 'large';
+        size: 'compact' | 'default' | 'large' | 'medium';
         stickyHeaderItemProps: TableItemProps;
         totalColumnCount: number;
     }) => {
@@ -1271,6 +1274,7 @@ const BaseItemTableList = ({
     headerActions,
     headerHeight = 40,
     initialTop,
+    isAlbumDetail = false,
     itemCount,
     itemType,
     onColumnReordered,
@@ -1305,7 +1309,6 @@ const BaseItemTableList = ({
     const [albumGroupContentHeights, setAlbumGroupContentHeights] = useState(
         () => new Map<string, number>(),
     );
-
     const setAlbumGroupContentHeight = useCallback((groupKey: string, height: number) => {
         setAlbumGroupContentHeights((prev) => {
             if (prev.get(groupKey) === height) return prev;
@@ -1430,9 +1433,9 @@ const BaseItemTableList = ({
                     ? TableItemSize.COMPACT
                     : size === 'medium'
                       ? TableItemSize.MEDIUM
-                    : size === 'large'
-                      ? TableItemSize.LARGE
-                      : TableItemSize.DEFAULT;
+                      : size === 'large'
+                        ? TableItemSize.LARGE
+                        : TableItemSize.DEFAULT;
 
             const baseHeight =
                 typeof rowHeight === 'number' ? rowHeight : rowHeight?.(index, cellProps) || height;
@@ -1536,6 +1539,7 @@ const BaseItemTableList = ({
             },
             hasAlbumGroupColumn,
             internalState: {} as ItemListStateActions,
+            isAlbumDetail,
             itemType,
             playerContext,
             size,
@@ -1558,6 +1562,7 @@ const BaseItemTableList = ({
             getItem,
             getRowHeight,
             hasAlbumGroupColumn,
+            isAlbumDetail,
             itemType,
             parsedColumns,
             playerContext,
@@ -1620,9 +1625,9 @@ const BaseItemTableList = ({
                     ? TableItemSize.COMPACT
                     : size === 'medium'
                       ? TableItemSize.MEDIUM
-                    : size === 'large'
-                      ? TableItemSize.LARGE
-                      : TableItemSize.DEFAULT;
+                      : size === 'large'
+                        ? TableItemSize.LARGE
+                        : TableItemSize.DEFAULT;
 
             const baseHeight = typeof rowHeight === 'number' ? rowHeight : height;
 
@@ -1735,6 +1740,7 @@ const BaseItemTableList = ({
             groups,
             headerActions,
             internalState,
+            isAlbumDetail,
             itemType,
             pinnedLeftColumnCount,
             pinnedLeftColumnWidths: displayColumnWidths.slice(0, pinnedLeftColumnCount),
@@ -1764,6 +1770,7 @@ const BaseItemTableList = ({
             groups,
             headerActions,
             internalState,
+            isAlbumDetail,
             itemType,
             onColumnReordered,
             onColumnResized,
@@ -1815,6 +1822,7 @@ const BaseItemTableList = ({
             groups,
             headerActions,
             internalState,
+            isAlbumDetail,
             itemType,
             playerContext,
             playlistId: routePlaylistId,
@@ -1840,6 +1848,7 @@ const BaseItemTableList = ({
             groups,
             headerActions,
             internalState,
+            isAlbumDetail,
             itemType,
             playerContext,
             routePlaylistId,

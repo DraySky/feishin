@@ -28,11 +28,12 @@ import {
 
 export interface PlayerState extends Actions, State {}
 
-export type QueuePlaybackContext =
-    | { albumId: string; serverId: string; source: 'albumDetail' }
-    | null;
-
 export type QueueGroupingProperty = keyof QueueSong;
+
+export type QueuePlaybackContext =
+    | null
+    | { albumId: string; serverId: string; source: 'albumDetail' }
+    | { playlistId: string; serverId: string; source: 'playlistDetail' };
 
 interface Actions {
     addToQueueByType: (items: Song[], playType: Play, playSongId?: string) => void;
@@ -68,9 +69,9 @@ interface Actions {
     moveSelectedToBottom: (items: QueueSong[]) => void;
     moveSelectedToNext: (items: QueueSong[]) => void;
     moveSelectedToTop: (items: QueueSong[]) => void;
-    replaceQueueFromAlbumDetail: (
+    replaceQueueFromCollectionDetail: (
         items: Song[],
-        context: { albumId: string; serverId: string; shuffle: boolean },
+        context: CollectionDetailPlaybackContext,
     ) => void;
     setCrossfadeDuration: (duration: number) => void;
     setCrossfadeStyle: (style: CrossfadeStyle) => void;
@@ -87,6 +88,23 @@ interface Actions {
     toggleRepeat: () => void;
     toggleShuffle: () => void;
 }
+
+type CollectionDetailPlaybackContext =
+    | {
+          albumId: string;
+          playSongId?: string;
+          serverId: string;
+          shuffle: boolean;
+          source: 'albumDetail';
+      }
+    | {
+          playItemId?: string;
+          playlistId: string;
+          playSongId?: string;
+          serverId: string;
+          shuffle: boolean;
+          source: 'playlistDetail';
+      };
 
 interface GroupedQueue {
     groups: { count: number; name: string }[];
@@ -332,6 +350,10 @@ function generateShuffledIndexes(length: number): number[] {
     return shuffleInPlace(indexes);
 }
 
+function invalidateQueuePlaybackContext(state: State): void {
+    state.queuePlaybackContext = null;
+}
+
 // Helper function to regenerate shuffled indexes if shuffle is enabled
 function regenerateShuffledIndexesIfNeeded(state: {
     player: { shuffle: PlayerShuffle };
@@ -340,10 +362,6 @@ function regenerateShuffledIndexesIfNeeded(state: {
     if (isShuffleEnabled(state)) {
         state.queue.shuffled = generateShuffledIndexes(state.queue.default.length);
     }
-}
-
-function invalidateQueuePlaybackContext(state: State): void {
-    state.queuePlaybackContext = null;
 }
 
 const initialState: State = {
@@ -1499,6 +1517,70 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                         state.queue.default = newQueue;
                     });
                 },
+                replaceQueueFromCollectionDetail: (items, context) => {
+                    const newItems = items.map(toQueueSong);
+                    if (newItems.length === 0) return;
+
+                    const newUniqueIds = newItems.map((item) => item._uniqueId);
+                    const selectedQueueIndex =
+                        'playItemId' in context && context.playItemId
+                            ? newItems.findIndex(
+                                  (item) => item.playlistItemId === context.playItemId,
+                              )
+                            : context.playSongId
+                              ? newItems.findIndex((item) => item.id === context.playSongId)
+                              : -1;
+                    let shuffled = context.shuffle
+                        ? generateShuffledIndexes(newUniqueIds.length)
+                        : [];
+                    if (context.shuffle && selectedQueueIndex >= 0) {
+                        shuffled = [
+                            selectedQueueIndex,
+                            ...shuffled.filter((index) => index !== selectedQueueIndex),
+                        ];
+                    }
+                    const firstQueueIndex =
+                        selectedQueueIndex >= 0
+                            ? selectedQueueIndex
+                            : context.shuffle
+                              ? shuffled[0]
+                              : 0;
+                    const firstSongUniqueId = newUniqueIds[firstQueueIndex];
+                    const playerIndex = context.shuffle ? 0 : firstQueueIndex;
+
+                    clearActiveRadio();
+                    set((state) => {
+                        state.queue.songs = Object.fromEntries(
+                            newItems.map((item) => [item._uniqueId, item]),
+                        );
+                        state.queue.default = newUniqueIds;
+                        state.queue.shuffled = shuffled;
+                        state.queuePlaybackContext =
+                            context.source === 'albumDetail'
+                                ? {
+                                      albumId: context.albumId,
+                                      serverId: context.serverId,
+                                      source: 'albumDetail',
+                                  }
+                                : {
+                                      playlistId: context.playlistId,
+                                      serverId: context.serverId,
+                                      source: 'playlistDetail',
+                                  };
+                        state.player.index = playerIndex;
+                        state.player.playerNum = 1;
+                        state.player.shuffle = context.shuffle
+                            ? PlayerShuffle.TRACK
+                            : PlayerShuffle.NONE;
+                        state.player.status = PlayerStatus.PLAYING;
+                        setTimestampStore(0);
+                    });
+
+                    eventEmitter.emit('PLAYER_PLAY', {
+                        id: firstSongUniqueId,
+                        index: playerIndex,
+                    });
+                },
                 setQueue: (items, index, position) => {
                     const newItems = items.map(toQueueSong);
                     const newUniqueIds = newItems.map((item) => item._uniqueId);
@@ -1519,43 +1601,6 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                         data: items,
                         index: index ?? 0,
                         position: position ?? 0,
-                    });
-                },
-                replaceQueueFromAlbumDetail: (items, context) => {
-                    const newItems = items.map(toQueueSong);
-                    if (newItems.length === 0) return;
-
-                    const newUniqueIds = newItems.map((item) => item._uniqueId);
-                    const shuffled = context.shuffle
-                        ? generateShuffledIndexes(newUniqueIds.length)
-                        : [];
-                    const firstQueueIndex = context.shuffle ? shuffled[0] : 0;
-                    const firstSongUniqueId = newUniqueIds[firstQueueIndex];
-
-                    clearActiveRadio();
-                    set((state) => {
-                        state.queue.songs = Object.fromEntries(
-                            newItems.map((item) => [item._uniqueId, item]),
-                        );
-                        state.queue.default = newUniqueIds;
-                        state.queue.shuffled = shuffled;
-                        state.queuePlaybackContext = {
-                            albumId: context.albumId,
-                            serverId: context.serverId,
-                            source: 'albumDetail',
-                        };
-                        state.player.index = 0;
-                        state.player.playerNum = 1;
-                        state.player.shuffle = context.shuffle
-                            ? PlayerShuffle.TRACK
-                            : PlayerShuffle.NONE;
-                        state.player.status = PlayerStatus.PLAYING;
-                        setTimestampStore(0);
-                    });
-
-                    eventEmitter.emit('PLAYER_PLAY', {
-                        id: firstSongUniqueId,
-                        index: 0,
                     });
                 },
                 ...initialState,
@@ -1871,7 +1916,7 @@ export const usePlayerActions = () => {
             moveSelectedToBottom: state.moveSelectedToBottom,
             moveSelectedToNext: state.moveSelectedToNext,
             moveSelectedToTop: state.moveSelectedToTop,
-            replaceQueueFromAlbumDetail: state.replaceQueueFromAlbumDetail,
+            replaceQueueFromCollectionDetail: state.replaceQueueFromCollectionDetail,
             setCrossfadeDuration: state.setCrossfadeDuration,
             setCrossfadeStyle: state.setCrossfadeStyle,
             setPauseOnNextSongEnd: state.setPauseOnNextSongEnd,

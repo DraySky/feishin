@@ -48,6 +48,14 @@ export interface PlayerContext {
         type: AddToQueueType,
         playSongId?: string,
         contextPlaylistId?: null | string,
+        options?: {
+            playlistDetail?: {
+                playItemId?: string;
+                playlistId: string;
+                serverId: string;
+                shuffle: boolean;
+            };
+        },
     ) => void;
     addToQueueByFetch: (
         serverId: string,
@@ -55,7 +63,12 @@ export interface PlayerContext {
         itemType: LibraryItem,
         type: AddToQueueType,
         options?: {
-            albumDetail?: { albumId: string; serverId: string; shuffle: boolean };
+            albumDetail?: {
+                albumId: string;
+                playSongId?: string;
+                serverId: string;
+                shuffle: boolean;
+            };
         },
     ) => void;
     addToQueueByListQuery: (
@@ -266,6 +279,14 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
             type: AddToQueueType,
             playSongId?: string,
             contextPlaylistId?: null | string,
+            options?: {
+                playlistDetail?: {
+                    playItemId?: string;
+                    playlistId: string;
+                    serverId: string;
+                    shuffle: boolean;
+                };
+            },
         ) => {
             const filters = useSettingsStore.getState().playback.filters;
             let filteredData = filterSongsByPlayerFilters(data, filters);
@@ -277,7 +298,13 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
             }
 
             const addToQueue = () => {
-                if (typeof type === 'object' && 'edge' in type && type.edge !== null) {
+                if (options?.playlistDetail) {
+                    storeActions.replaceQueueFromCollectionDetail(filteredData, {
+                        ...options.playlistDetail,
+                        playSongId,
+                        source: 'playlistDetail',
+                    });
+                } else if (typeof type === 'object' && 'edge' in type && type.edge !== null) {
                     const edge = type.edge === 'top' ? 'top' : 'bottom';
 
                     logger.debug('Added to queue by data', {
@@ -321,7 +348,12 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
             itemType: LibraryItem,
             type: AddToQueueType,
             options?: {
-                albumDetail?: { albumId: string; serverId: string; shuffle: boolean };
+                albumDetail?: {
+                    albumId: string;
+                    playSongId?: string;
+                    serverId: string;
+                    shuffle: boolean;
+                };
             },
         ) => {
             let toastId: null | string = null;
@@ -398,10 +430,10 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
 
                 const addToQueue = () => {
                     if (options?.albumDetail) {
-                        storeActions.replaceQueueFromAlbumDetail(
-                            filteredSongs,
-                            options.albumDetail,
-                        );
+                        storeActions.replaceQueueFromCollectionDetail(filteredSongs, {
+                            ...options.albumDetail,
+                            source: 'albumDetail',
+                        });
                     } else if (typeof type === 'object' && 'edge' in type && type.edge !== null) {
                         const edge = type.edge === 'top' ? 'top' : 'bottom';
                         storeActions.addToQueueByUniqueId(filteredSongs, type.uniqueId, edge);

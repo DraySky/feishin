@@ -32,6 +32,7 @@ export interface ItemControls {
         edge: 'bottom' | 'left' | 'right' | 'top' | null;
     }) => void;
     onColumnResized?: ({ columnId, width }: { columnId: TableColumn; width: number }) => void;
+    onDirectPlay?: ({ index, internalState, item, itemType }: DefaultItemControlProps) => void;
     onDoubleClick?: ({ index, internalState, item, itemType }: DefaultItemControlProps) => void;
     onExpand?: ({ index, internalState, item, itemType }: DefaultItemControlProps) => void;
     onFavorite?: ({
@@ -98,7 +99,7 @@ export interface ItemListTableComponentProps<TQuery> extends ItemListComponentPr
     enableRowHoverHighlight?: boolean;
     enableSelection?: boolean;
     enableVerticalBorders?: boolean;
-    size?: 'compact' | 'medium' | 'default' | 'large';
+    size?: 'compact' | 'default' | 'large' | 'medium';
 }
 
 export interface ItemTableListColumnConfig {

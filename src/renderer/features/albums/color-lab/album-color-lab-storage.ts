@@ -1,19 +1,17 @@
 import { get, set } from 'idb-keyval';
 
-import type { ColorLabBatch } from './album-color-lab-types';
+import type { ColorLabSession } from './album-color-lab-types';
 
-const STORAGE_KEY = 'feishin-album-color-lab-v1';
+const STORAGE_KEY = 'feishin-album-color-lab-v2';
 
 export interface ColorLabStorageState {
-    activeBatchId: null | string;
-    activeCaseByBatch: Record<string, number>;
-    batches: ColorLabBatch[];
+    activeSessionId: null | string;
+    sessions: ColorLabSession[];
 }
 
 export const EMPTY_COLOR_LAB_STORAGE: ColorLabStorageState = {
-    activeBatchId: null,
-    activeCaseByBatch: {},
-    batches: [],
+    activeSessionId: null,
+    sessions: [],
 };
 
 export const loadColorLabStorage = async (): Promise<ColorLabStorageState> => {

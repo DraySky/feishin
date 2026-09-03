@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import { t } from 'i18next';
 import { ReactNode, useCallback } from 'react';
 
 import styles from './row-index-column.module.css';
@@ -10,20 +11,41 @@ import {
 } from '/@/renderer/components/item-list/item-table-list/item-table-list-column';
 import { ItemListItem } from '/@/renderer/components/item-list/types';
 import { ItemRowPlayControls } from '/@/renderer/features/shared/components/item-row-play-controls';
+import { useAppFocus } from '/@/renderer/hooks/use-app-focus';
 import { ActionIcon } from '/@/shared/components/action-icon/action-icon';
 import { Flex } from '/@/shared/components/flex/flex';
 import { HoverCard } from '/@/shared/components/hover-card/hover-card';
 import { Text } from '/@/shared/components/text/text';
-import { Play } from '/@/shared/types/types';
+import { Play, PlayerStatus } from '/@/shared/types/types';
+
+export const PlayingEqualizer = () => {
+    const isAppFocused = useAppFocus();
+
+    return (
+        <span
+            aria-hidden="true"
+            className={styles.playingEqualizer}
+            data-animation-paused={!isAppFocused}
+        >
+            <span />
+            <span />
+            <span />
+        </span>
+    );
+};
 
 export const RowPlayControlCell = (
     props: ItemTableListInnerColumn & {
+        activePlaybackState?: PlayerStatus.PAUSED | PlayerStatus.PLAYING;
         indexContent: ReactNode;
+        onActivePlayback: () => void;
+        onDirectPlay?: () => void;
         onPlay: (playType: Play) => void;
         showPlayControls: boolean;
     },
 ) => {
     const {
+        activePlaybackState,
         controls,
         data,
         enableExpansion,
@@ -31,6 +53,8 @@ export const RowPlayControlCell = (
         indexContent,
         internalState,
         itemType,
+        onActivePlayback,
+        onDirectPlay,
         onPlay,
         rowIndex,
         showPlayControls,
@@ -105,6 +129,36 @@ export const RowPlayControlCell = (
     if (!showPlayControls) {
         return (
             <TableColumnTextContainer {...props}>{getIndexDisplay(false)}</TableColumnTextContainer>
+        );
+    }
+
+    if (onDirectPlay) {
+        const isActivePlaying = activePlaybackState === PlayerStatus.PLAYING;
+        const isActivePaused = activePlaybackState === PlayerStatus.PAUSED;
+
+        return (
+            <TableColumnTextContainer
+                {...props}
+                className={clsx(styles.fullSizeContent, {
+                    [styles.activeIndexContent]: isActivePaused,
+                })}
+            >
+                <Flex className={styles.indexContent} justify="center" w="100%">
+                    <span className="hide-on-hover">{getIndexDisplay(false)}</span>
+                    <ActionIcon
+                        aria-label={t(isActivePlaying ? 'player.pause' : 'player.play')}
+                        className="hover-only"
+                        icon={isActivePlaying ? 'mediaPause' : 'mediaPlay'}
+                        iconProps={{ fill: 'default', size: 'md' }}
+                        onClick={
+                            isActivePlaying || isActivePaused ? onActivePlayback : onDirectPlay
+                        }
+                        size="xs"
+                        stopsPropagation
+                        variant="transparent"
+                    />
+                </Flex>
+            </TableColumnTextContainer>
         );
     }
 

@@ -43,3 +43,21 @@
     height: 100%;
     overflow: hidden;
 }
+
+.container[data-page-scroll='true'] {
+    align-items: flex-start;
+    height: auto;
+    overflow: visible;
+
+    .sidebar-container {
+        position: sticky;
+        top: calc(65px + var(--theme-spacing-md));
+        height: auto;
+        overflow: visible;
+    }
+
+    .content-container {
+        height: auto;
+        overflow: visible;
+    }
+}

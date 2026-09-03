@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import { motion } from 'motion/react';
 import { createContext, memo, MouseEvent, useCallback, useContext, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { generatePath, Link } from 'react-router';
+import { generatePath, Link, useParams } from 'react-router';
 
 import styles from './sidebar-playlist-list.module.css';
 
@@ -117,8 +117,10 @@ export const PlaylistRowButton = memo(
         const sidebarPlaylistSorting = useSidebarPlaylistSorting();
         const sidebarPlaylistMode = useSidebarPlaylistMode();
         const isCompact = sidebarPlaylistMode === 'compact';
-        const activePlaylistId = useCurrentPlaylistContextId();
-        const isActive = activePlaylistId === item.id;
+        const playingPlaylistId = useCurrentPlaylistContextId();
+        const { playlistId: openPlaylistId } = useParams();
+        const isPlaying = playingPlaylistId === item.id;
+        const isOpen = openPlaylistId === item.id;
 
         const [isHovered, setIsHovered] = useState(false);
         const isSmartPlaylist = Boolean(item.rules);
@@ -280,6 +282,7 @@ export const PlaylistRowButton = memo(
                     [styles.rowCompact]: isCompact,
                     [styles.rowDraggedOver]: isDraggedOver && !isSmartPlaylist,
                     [styles.rowHover]: isHovered,
+                    [styles.rowOpen]: isOpen,
                 })}
                 initial={false}
                 onContextMenu={(e: MouseEvent<HTMLAnchorElement>) => {
@@ -296,7 +299,7 @@ export const PlaylistRowButton = memo(
                     <>
                         <Text
                             className={clsx(styles.compactName, {
-                                [styles.nameActive]: isActive,
+                                [styles.nameActive]: isPlaying,
                             })}
                             fw={500}
                             size="md"
@@ -317,7 +320,7 @@ export const PlaylistRowButton = memo(
                             <div className={styles.metadata}>
                                 <Text
                                     className={clsx(styles.name, {
-                                        [styles.nameActive]: isActive,
+                                        [styles.nameActive]: isPlaying,
                                     })}
                                     fw={500}
                                     size="md"

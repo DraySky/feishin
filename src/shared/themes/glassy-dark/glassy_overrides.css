@@ -1,9 +1,4 @@
 /* stylelint-disable selector-class-pattern */
-.fs-player-bar-module-container {
-    background: rgb(0 0 0 / 40%) !important;
-    backdrop-filter: blur(2rem);
-}
-
 .fs-poster-card-module-image {
     border-radius: 18px !important;
 }
@@ -82,10 +77,6 @@
     border-radius: 8px 8px 0 0;
 }
 
-.fs-left-controls-module-playerbar-image {
-    border-radius: 8px !important;
-}
-
 .favorite_icon .mantine-ActionIcon-icon {
     justify-content: left;
 }
@@ -151,10 +142,6 @@ table {
 }
 
 /* stylelint-enable selector-not-notation */
-
-.fs-left-controls-module-image {
-    border-radius: 12px;
-}
 
 .fork-server-selector {
     .mantine-SegmentedControl-indicator,

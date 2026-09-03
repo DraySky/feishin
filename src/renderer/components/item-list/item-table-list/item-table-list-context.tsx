@@ -36,10 +36,11 @@ export type ItemTableListConfig = {
     groups?: ItemTableListGroupHeader[];
     headerActions?: ReactNode;
     internalState: ItemListStateActions;
+    isAlbumDetail?: boolean;
     itemType: LibraryItem;
     playerContext: PlayerContext;
     playlistId?: string;
-    size: 'compact' | 'medium' | 'default' | 'large';
+    size: 'compact' | 'default' | 'large' | 'medium';
     startRowIndex?: number;
     tableId: string;
 };

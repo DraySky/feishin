@@ -5,7 +5,12 @@ import { Play } from '/@/shared/types/types';
 type PlayableArtistItem = AlbumArtist | Artist;
 
 interface PlayerQueueByDataActions {
-    addToQueueByData: (data: Song[], type: Play, playSongId?: string) => void;
+    addToQueueByData: (
+        data: Song[],
+        type: Play,
+        playSongId?: string,
+        contextPlaylistId?: null | string,
+    ) => void;
 }
 
 interface PlayerQueueByFetchActions {
@@ -18,12 +23,16 @@ interface PlayerQueueByFetchActions {
 }
 
 export const playSongFromItemListControl = ({
+    collection,
+    contextPlaylistId,
     index,
     internalState,
     item,
     meta,
     player,
 }: {
+    collection?: Song[];
+    contextPlaylistId?: null | string;
     index?: number;
     internalState?: ItemListStateActions;
     item: Song;
@@ -34,14 +43,14 @@ export const playSongFromItemListControl = ({
     const singleSongOnly = meta?.singleSongOnly === true;
 
     if (singleSongOnly) {
-        player.addToQueueByData([item], playType, item.id);
+        player.addToQueueByData([item], playType, item.id, contextPlaylistId);
         return;
     }
 
-    const items = internalState?.getData() as Song[];
+    const items = collection ?? (internalState?.getData() as Song[]);
 
-    if (index !== undefined && items) {
-        player.addToQueueByData(items, playType, item.id);
+    if ((collection || index !== undefined) && items) {
+        player.addToQueueByData(items, playType, item.id, contextPlaylistId);
     }
 };
 

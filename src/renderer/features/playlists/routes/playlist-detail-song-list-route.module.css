@@ -1,0 +1,76 @@
+.route-surface {
+    position: relative;
+    min-height: 100%;
+    background: var(--theme-colors-background);
+    isolation: isolate;
+}
+
+.hero-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 0;
+    width: 100%;
+    pointer-events: none;
+    user-select: none;
+    background-color: var(--playlist-color-base);
+    background-image: linear-gradient(
+        to bottom,
+        var(--playlist-color-hero-top) 0%,
+        var(--playlist-color-hero-mid) 55%,
+        var(--playlist-color-hero-bottom) 100%
+    );
+}
+
+.background-continuation {
+    position: absolute;
+    left: 0;
+    z-index: 0;
+    width: 100%;
+    pointer-events: none;
+    user-select: none;
+    background: linear-gradient(
+        to bottom,
+        var(--playlist-color-continuation-start) 0%,
+        var(--playlist-color-continuation-mid) var(--playlist-gradient-mid-stop),
+        var(--playlist-color-continuation-faint) var(--playlist-gradient-faint-stop),
+        var(--playlist-color-continuation-fade-76) var(--playlist-gradient-fade-76-stop),
+        var(--playlist-color-continuation-fade-64) var(--playlist-gradient-fade-64-stop),
+        var(--playlist-color-continuation-fade-52) var(--playlist-gradient-fade-52-stop),
+        var(--playlist-color-continuation-fade-40) var(--playlist-gradient-fade-40-stop),
+        var(--playlist-color-continuation-fade-30) var(--playlist-gradient-fade-30-stop),
+        var(--playlist-color-continuation-fade-21) var(--playlist-gradient-fade-21-stop),
+        var(--playlist-color-continuation-fade-14) var(--playlist-gradient-fade-14-stop),
+        var(--playlist-color-continuation-fade-8) var(--playlist-gradient-fade-8-stop),
+        var(--playlist-color-continuation-fade-4) var(--playlist-gradient-fade-4-stop),
+        transparent var(--playlist-gradient-transparent-stop),
+        transparent 100%
+    );
+}
+
+.foreground {
+    position: relative;
+    z-index: 1;
+}
+
+.query-editor-section[data-hidden='true'] {
+    display: none;
+}
+
+.list-content {
+    box-sizing: border-box;
+    padding: 0 1rem 5rem;
+
+    @container (min-width: $mantine-breakpoint-sm) {
+        padding-right: 2rem;
+        padding-left: 2rem;
+    }
+}
+
+.sticky-smart-playlist-badge {
+    color: rgb(255 255 255 / 90%) !important;
+    background: rgb(255 255 255 / 12%) !important;
+    border: 1px solid rgb(255 255 255 / 20%);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 14%);
+    backdrop-filter: blur(12px) saturate(1.3);
+}

@@ -1,0 +1,39 @@
+.playlist-header :global(.fs-library-header-module-image-section) > :global(.fs-library-header-module-image),
+.playlist-header
+    :global(.fs-library-header-module-image-section:hover)
+    > :global(.fs-library-header-module-image) {
+    box-shadow: inset 0 0 0 1px var(--fluentshin-specular) !important;
+}
+
+@container (min-width: $mantine-breakpoint-sm) {
+    .playlist-header:global(.fs-library-header-module-library-header) {
+        padding-right: 2rem !important;
+        padding-left: 2rem !important;
+    }
+}
+
+.metadata-group {
+    justify-content: center;
+    width: 100%;
+
+    @container (min-width: $mantine-breakpoint-sm) {
+        justify-content: flex-start;
+    }
+}
+
+.description {
+    max-width: 52rem;
+    color: rgb(255 255 255 / 68%);
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+.description :global(a),
+.description :global(a:visited) {
+    color: rgb(255 255 255 / 85%);
+}
+
+.description :global(a:hover) {
+    color: rgb(255 255 255);
+    text-decoration: underline;
+}

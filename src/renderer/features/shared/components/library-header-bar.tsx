@@ -1,4 +1,6 @@
 import { closeAllModals } from '@mantine/modals';
+import clsx from 'clsx';
+import { t } from 'i18next';
 import { AnimatePresence } from 'motion/react';
 import { CSSProperties, memo, ReactNode, useCallback, useRef, useState } from 'react';
 
@@ -33,8 +35,11 @@ const LibraryHeaderBarComponent = ({ children, ignoreMaxWidth }: LibraryHeaderBa
 interface HeaderPlayButtonProps {
     className?: string;
     ids?: string[];
+    isPlaying?: boolean;
     itemType: LibraryItem;
     listQuery?: Record<string, any>;
+    neutralGlass?: boolean;
+    onPlay?: () => void;
     songs?: Song[];
     variant?: 'default' | 'filled';
 }
@@ -47,8 +52,11 @@ interface TitleProps {
 const HeaderPlayButton = ({
     className,
     ids,
+    isPlaying,
     itemType,
     listQuery,
+    neutralGlass,
+    onPlay,
     songs,
     variant = 'filled',
     ...props
@@ -79,15 +87,19 @@ const HeaderPlayButton = ({
     return (
         <div className={styles.playButtonContainer}>
             <DefaultPlayButton
-                className={className}
+                className={clsx(className, neutralGlass && styles.neutralGlassPlayButton)}
+                icon={isPlaying ? 'mediaPause' : 'mediaPlay'}
                 loading={isPlayerFetching}
-                onClick={() => setIsOpen((prev) => !prev)}
+                onClick={onPlay || (() => setIsOpen((prev) => !prev))}
                 ref={buttonRef}
+                tooltip={
+                    onPlay ? { label: t(isPlaying ? 'player.pause' : 'player.play') } : undefined
+                }
                 variant={variant}
                 {...props}
             />
             <AnimatePresence>
-                {isOpen && (
+                {!onPlay && isOpen && (
                     <PlayButtonGroupPopover
                         loading={isPlayerFetching}
                         onClose={() => setIsOpen(false)}

@@ -3,7 +3,10 @@ import clsx from 'clsx';
 import styles from './row-index-column.module.css';
 
 import { isRowPlayControlColumn } from '/@/renderer/components/item-list/helpers/get-row-play-control-column';
-import { RowPlayControlCell } from '/@/renderer/components/item-list/item-table-list/columns/row-play-control-cell';
+import {
+    PlayingEqualizer,
+    RowPlayControlCell,
+} from '/@/renderer/components/item-list/item-table-list/columns/row-play-control-cell';
 import { useRowPlayControl } from '/@/renderer/components/item-list/item-table-list/columns/use-row-play-control';
 import {
     ItemTableListInnerColumn,
@@ -16,7 +19,7 @@ import { Flex } from '/@/shared/components/flex/flex';
 import { Icon } from '/@/shared/components/icon/icon';
 import { Text } from '/@/shared/components/text/text';
 import { LibraryItem } from '/@/shared/types/domain-types';
-import { TableColumn } from '/@/shared/types/types';
+import { PlayerStatus, TableColumn } from '/@/shared/types/types';
 
 const RowIndexColumnBase = (props: ItemTableListInnerColumn) => {
     const { itemType } = props;
@@ -97,7 +100,15 @@ const DefaultRowIndexColumn = (props: ItemTableListInnerColumn) => {
 };
 
 const PlayableRowIndexColumn = (props: ItemTableListInnerColumn) => {
-    const { handlePlay, isActive, isPlaying, showPlayControls } = useRowPlayControl(props);
+    const {
+        activePlaybackState,
+        handleActivePlayback,
+        handleDirectPlay,
+        handlePlay,
+        isActive,
+        isPlaying,
+        showPlayControls,
+    } = useRowPlayControl(props);
 
     let adjustedRowIndex =
         props.getAdjustedRowIndex?.(props.rowIndex) ??
@@ -108,7 +119,15 @@ const PlayableRowIndexColumn = (props: ItemTableListInnerColumn) => {
         adjustedRowIndex = props.startRowIndex + adjustedRowIndex;
     }
 
-    const indexContent = isActive ? (
+    const indexContent = handleDirectPlay ? (
+        activePlaybackState === PlayerStatus.PLAYING ? (
+            <Flex className={styles.indexContent}>
+                <PlayingEqualizer />
+            </Flex>
+        ) : (
+            adjustedRowIndex
+        )
+    ) : isActive ? (
         <Flex className={styles.indexContent}>
             <Icon fill="primary" icon={isPlaying ? 'mediaPlay' : 'mediaPause'} />
         </Flex>
@@ -119,7 +138,10 @@ const PlayableRowIndexColumn = (props: ItemTableListInnerColumn) => {
     return (
         <RowPlayControlCell
             {...props}
+            activePlaybackState={activePlaybackState}
             indexContent={indexContent}
+            onActivePlayback={handleActivePlayback}
+            onDirectPlay={handleDirectPlay}
             onPlay={handlePlay}
             showPlayControls={showPlayControls}
         />

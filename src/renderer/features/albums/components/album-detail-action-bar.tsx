@@ -17,6 +17,7 @@ import { Spinner } from '/@/shared/components/spinner/spinner';
 
 interface AlbumDetailActionBarProps {
     favorite?: boolean;
+    isPlaying: boolean;
     onAlbumRadio: () => void;
     onFavorite?: (event: MouseEvent<HTMLButtonElement>) => void;
     onMore: (event: MouseEvent<HTMLButtonElement>) => void;
@@ -29,6 +30,7 @@ interface AlbumDetailActionBarProps {
 
 export const AlbumDetailActionBar = ({
     favorite,
+    isPlaying,
     onAlbumRadio,
     onFavorite,
     onMore,
@@ -40,8 +42,9 @@ export const AlbumDetailActionBar = ({
 }: AlbumDetailActionBarProps) => {
     const { t } = useTranslation();
     const isPlayerFetching = useIsPlayerFetching();
-    const isMutatingFavorite =
-        useIsMutatingCreateFavorite() || useIsMutatingDeleteFavorite();
+    const isCreatingFavorite = useIsMutatingCreateFavorite();
+    const isDeletingFavorite = useIsMutatingDeleteFavorite();
+    const isMutatingFavorite = isCreatingFavorite || isDeletingFavorite;
     const isMutatingRating = useIsMutatingRating();
 
     return (
@@ -49,12 +52,12 @@ export const AlbumDetailActionBar = ({
             <Group className={styles.primaryActions} gap="sm">
                 <ActionIcon
                     className={styles.playButton}
-                    icon="mediaPlay"
+                    icon={isPlaying ? 'mediaPause' : 'mediaPlay'}
                     iconProps={{ size: 'xl' }}
                     onClick={onPlay}
                     radius="xl"
                     size={60}
-                    tooltip={{ label: t('player.play') }}
+                    tooltip={{ label: t(isPlaying ? 'player.pause' : 'player.play') }}
                     variant="transparent"
                 />
                 <ActionIcon

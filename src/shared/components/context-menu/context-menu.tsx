@@ -39,6 +39,7 @@ interface ContentProps {
 
 interface ContextMenuProps {
     children: ReactNode;
+    onOpenChange?: (open: boolean) => void;
 }
 
 interface DividerProps {}
@@ -71,13 +72,18 @@ interface TargetProps {
 }
 
 export function ContextMenu(props: ContextMenuProps) {
-    const { children } = props;
+    const { children, onOpenChange } = props;
 
     const [open, setOpen] = useState(false);
     const context = useMemo(() => ({ open, setOpen }), [open]);
 
+    const handleOpenChange = (nextOpen: boolean) => {
+        setOpen(nextOpen);
+        onOpenChange?.(nextOpen);
+    };
+
     return (
-        <RadixContextMenu.Root onOpenChange={setOpen}>
+        <RadixContextMenu.Root onOpenChange={handleOpenChange}>
             <ContextMenuContext.Provider value={context}>{children}</ContextMenuContext.Provider>
         </RadixContextMenu.Root>
     );

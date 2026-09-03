@@ -22,7 +22,7 @@ import {
     PlaylistSongListResponse,
     Song,
 } from '/@/shared/types/domain-types';
-import { ItemListKey, TableColumn } from '/@/shared/types/types';
+import { ItemListKey, Play, TableColumn } from '/@/shared/types/types';
 
 interface PlaylistDetailSongListTableProps extends Omit<
     ItemListTableComponentProps<PlaylistSongListQuery>,
@@ -33,6 +33,7 @@ interface PlaylistDetailSongListTableProps extends Omit<
     items?: Song[];
     itemsPerPage?: number;
     onPageChange?: (page: number) => void;
+    pageScroll?: boolean;
 }
 
 export const PlaylistDetailSongListTable = forwardRef<any, PlaylistDetailSongListTableProps>(
@@ -51,13 +52,14 @@ export const PlaylistDetailSongListTable = forwardRef<any, PlaylistDetailSongLis
             items: itemsProp,
             itemsPerPage,
             onPageChange,
+            pageScroll = false,
             saveScrollOffset = true,
             size = 'default',
         },
         ref,
     ) => {
         const { handleOnScrollEnd, scrollOffset } = useItemListScrollPersist({
-            enabled: saveScrollOffset,
+            enabled: saveScrollOffset && !pageScroll,
         });
 
         const { handleColumnReordered } = useItemListColumnReorder({
@@ -84,7 +86,7 @@ export const PlaylistDetailSongListTable = forwardRef<any, PlaylistDetailSongLis
             return sortSongList(list, query.sortBy, query.sortOrder);
         }, [data?.items, searchTerm, query.sortBy, query.sortOrder]);
 
-        const { setListData } = useListContext();
+        const { id: playlistId, playlistPlayback, setListData } = useListContext();
         const songData = itemsProp ?? songDataFromData;
 
         useEffect(() => {
@@ -99,6 +101,25 @@ export const PlaylistDetailSongListTable = forwardRef<any, PlaylistDetailSongLis
 
         const overrideControls: Partial<ItemControls> = useMemo(() => {
             return {
+                onDirectPlay: ({ index, internalState, item }) => {
+                    if (!item) {
+                        return;
+                    }
+
+                    if (playlistPlayback) {
+                        playlistPlayback.play(songData, item as Song);
+                    } else {
+                        playSongFromItemListControl({
+                            collection: songData,
+                            contextPlaylistId: playlistId,
+                            index,
+                            internalState,
+                            item: item as Song,
+                            meta: { playType: Play.NOW },
+                            player,
+                        });
+                    }
+                },
                 onDoubleClick: ({ index, internalState, item, meta }) => {
                     if (!item) {
                         return;
@@ -113,7 +134,7 @@ export const PlaylistDetailSongListTable = forwardRef<any, PlaylistDetailSongLis
                     });
                 },
             };
-        }, [player]);
+        }, [player, playlistId, playlistPlayback, songData]);
 
         const getRowId = useMemo(() => {
             return (item: unknown) => {
@@ -142,6 +163,10 @@ export const PlaylistDetailSongListTable = forwardRef<any, PlaylistDetailSongLis
             return songData.slice(start, start + itemsPerPage);
         }, [isPaginated, currentPage, itemsPerPage, songData]);
         const dataToRender = isPaginated ? paginatedData : songData;
+        const rowOrderKey = useMemo(
+            () => dataToRender.map((song) => song.playlistItemId || song.id).join('|'),
+            [dataToRender],
+        );
 
         const table = (
             <ItemTableList
@@ -151,21 +176,28 @@ export const PlaylistDetailSongListTable = forwardRef<any, PlaylistDetailSongLis
                 columns={effectiveColumns}
                 data={dataToRender}
                 enableAlternateRowColors={enableAlternateRowColors}
+                enableDragScroll={!pageScroll}
                 enableExpansion={false}
                 enableHeader={enableHeader}
                 enableHorizontalBorders={enableHorizontalBorders}
                 enableRowHoverHighlight={enableRowHoverHighlight}
                 enableSelection={enableSelection}
+                enableStickyHeader={pageScroll}
                 enableVerticalBorders={enableVerticalBorders}
                 getRowId={getRowId}
-                initialTop={{
-                    to: scrollOffset ?? 0,
-                    type: 'offset',
-                }}
+                initialTop={
+                    pageScroll
+                        ? undefined
+                        : {
+                              to: scrollOffset ?? 0,
+                              type: 'offset',
+                          }
+                }
                 itemType={LibraryItem.PLAYLIST_SONG}
+                key={rowOrderKey}
                 onColumnReordered={handleColumnReordered}
                 onColumnResized={handleColumnResized}
-                onScrollEnd={handleOnScrollEnd}
+                onScrollEnd={pageScroll ? undefined : handleOnScrollEnd}
                 overrideControls={overrideControls}
                 ref={ref}
                 size={size}
@@ -179,6 +211,7 @@ export const PlaylistDetailSongListTable = forwardRef<any, PlaylistDetailSongLis
                     itemsPerPage={itemsPerPage}
                     onChange={onPageChange!}
                     pageCount={pageCount}
+                    pageScroll={pageScroll}
                     totalItemCount={totalCount}
                 >
                     {table}
@@ -202,13 +235,14 @@ export const PlaylistDetailSongListEditTable = forwardRef<any, PlaylistDetailSon
             enableRowHoverHighlight = true,
             enableSelection = true,
             enableVerticalBorders = false,
+            pageScroll = false,
             saveScrollOffset = true,
             size = 'default',
         },
         ref,
     ) => {
         const { handleOnScrollEnd, scrollOffset } = useItemListScrollPersist({
-            enabled: saveScrollOffset,
+            enabled: saveScrollOffset && !pageScroll,
         });
 
         const { handleColumnReordered } = useItemListColumnReorder({
@@ -220,11 +254,31 @@ export const PlaylistDetailSongListEditTable = forwardRef<any, PlaylistDetailSon
         });
 
         const player = usePlayer();
+        const { id: playlistId, playlistPlayback } = useListContext();
 
         const currentSong = usePlayerSong();
 
         const overrideControls: Partial<ItemControls> = useMemo(() => {
             return {
+                onDirectPlay: ({ index, internalState, item }) => {
+                    if (!item) {
+                        return;
+                    }
+
+                    if (playlistPlayback) {
+                        playlistPlayback.play(data.items, item as Song);
+                    } else {
+                        playSongFromItemListControl({
+                            collection: data.items,
+                            contextPlaylistId: playlistId,
+                            index,
+                            internalState,
+                            item: item as Song,
+                            meta: { playType: Play.NOW },
+                            player,
+                        });
+                    }
+                },
                 onDoubleClick: ({ index, internalState, item, meta }) => {
                     if (!item) {
                         return;
@@ -239,7 +293,7 @@ export const PlaylistDetailSongListEditTable = forwardRef<any, PlaylistDetailSon
                     });
                 },
             };
-        }, [player]);
+        }, [data.items, player, playlistId, playlistPlayback]);
 
         const getRowId = useMemo(() => {
             return (item: unknown) => {
@@ -260,21 +314,27 @@ export const PlaylistDetailSongListEditTable = forwardRef<any, PlaylistDetailSon
                 data={data.items}
                 enableAlternateRowColors={enableAlternateRowColors}
                 enableDrag
+                enableDragScroll={!pageScroll}
                 enableExpansion={false}
                 enableHeader={enableHeader}
                 enableHorizontalBorders={enableHorizontalBorders}
                 enableRowHoverHighlight={enableRowHoverHighlight}
                 enableSelection={enableSelection}
+                enableStickyHeader={pageScroll}
                 enableVerticalBorders={enableVerticalBorders}
                 getRowId={getRowId}
-                initialTop={{
-                    to: scrollOffset ?? 0,
-                    type: 'offset',
-                }}
+                initialTop={
+                    pageScroll
+                        ? undefined
+                        : {
+                              to: scrollOffset ?? 0,
+                              type: 'offset',
+                          }
+                }
                 itemType={LibraryItem.PLAYLIST_SONG}
                 onColumnReordered={handleColumnReordered}
                 onColumnResized={handleColumnResized}
-                onScrollEnd={handleOnScrollEnd}
+                onScrollEnd={pageScroll ? undefined : handleOnScrollEnd}
                 overrideControls={overrideControls}
                 ref={ref}
                 size={size}

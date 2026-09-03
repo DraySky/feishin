@@ -4,7 +4,7 @@ import type {
 } from '/@/renderer/components/item-list/helpers/item-list-state';
 
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { ReactNode, useMemo, useState } from 'react';
+import { ReactNode, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { generatePath, useParams } from 'react-router';
 
@@ -37,7 +37,6 @@ import { setJsonSearchParam } from '/@/renderer/utils/query-params';
 import { ActionIcon } from '/@/shared/components/action-icon/action-icon';
 import { Checkbox } from '/@/shared/components/checkbox/checkbox';
 import { Group } from '/@/shared/components/group/group';
-import { Icon } from '/@/shared/components/icon/icon';
 import { Pill, PillLink } from '/@/shared/components/pill/pill';
 import { Spoiler } from '/@/shared/components/spoiler/spoiler';
 import { Stack } from '/@/shared/components/stack/stack';
@@ -51,7 +50,7 @@ import {
     Song,
     SortOrder,
 } from '/@/shared/types/domain-types';
-import { ItemListKey, ListDisplayType } from '/@/shared/types/types';
+import { ItemListKey, ListDisplayType, Play } from '/@/shared/types/types';
 
 const metadataPillClassNames = { root: styles.metadataPill };
 const metadataPillLinkClassNames = {
@@ -509,7 +508,7 @@ const AlbumMetadataExternalLinks = ({
     );
 };
 
-export const AlbumDetailContent = () => {
+export const AlbumDetailContent = ({ shuffleActive }: { shuffleActive: boolean }) => {
     const { albumId } = useParams() as { albumId: string };
     const server = useCurrentServer();
     const detailQuery = useSuspenseQuery(
@@ -532,7 +531,12 @@ export const AlbumDetailContent = () => {
                 <div className={styles.contentLayout}>
                     <div className={styles.songsColumn}>
                         {detailQuery?.data?.songs && detailQuery.data.songs.length > 0 && (
-                            <AlbumDetailSongsTable songs={detailQuery.data.songs} />
+                            <AlbumDetailSongsTable
+                                albumId={detailQuery.data.id}
+                                serverId={detailQuery.data._serverId}
+                                shuffleActive={shuffleActive}
+                                songs={detailQuery.data.songs}
+                            />
                         )}
                     </div>
                     <div className={styles.metadataColumn}>
@@ -576,6 +580,9 @@ export const AlbumDetailContent = () => {
 };
 
 interface AlbumDetailSongsTableProps {
+    albumId: string;
+    serverId: string;
+    shuffleActive: boolean;
     songs: Song[];
 }
 
@@ -729,7 +736,12 @@ function AlbumDetailCarousels({ data }: { data: Album }) {
     );
 }
 
-const AlbumDetailSongsTable = ({ songs }: AlbumDetailSongsTableProps) => {
+const AlbumDetailSongsTable = ({
+    albumId,
+    serverId,
+    shuffleActive,
+    songs,
+}: AlbumDetailSongsTableProps) => {
     const { t } = useTranslation();
     const tableConfig = useSettingsStore((state) => state.lists[ItemListKey.ALBUM_DETAIL]?.table);
 
@@ -820,6 +832,20 @@ const AlbumDetailSongsTable = ({ songs }: AlbumDetailSongsTableProps) => {
 
     const overrideControls: Partial<ItemControls> = useMemo(() => {
         return {
+            onDirectPlay: ({ item }) => {
+                if (!item) {
+                    return;
+                }
+
+                player.addToQueueByFetch(serverId, [albumId], LibraryItem.ALBUM, Play.NOW, {
+                    albumDetail: {
+                        albumId,
+                        playSongId: item.id,
+                        serverId,
+                        shuffle: shuffleActive,
+                    },
+                });
+            },
             onDoubleClick: ({ index, internalState, item, meta }) => {
                 if (!item) {
                     return;
@@ -834,7 +860,7 @@ const AlbumDetailSongsTable = ({ songs }: AlbumDetailSongsTableProps) => {
                 });
             },
         };
-    }, [player]);
+    }, [albumId, player, serverId, shuffleActive]);
 
     if (!tableConfig || columns.length === 0) {
         return null;
@@ -879,6 +905,7 @@ const AlbumDetailSongsTable = ({ songs }: AlbumDetailSongsTableProps) => {
                     tableColumnsData={SONG_TABLE_COLUMNS}
                 />
             }
+            isAlbumDetail
             itemType={LibraryItem.SONG}
             onColumnReordered={handleColumnReordered}
             onColumnResized={handleColumnResized}

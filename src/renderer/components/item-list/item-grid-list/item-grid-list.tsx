@@ -66,6 +66,7 @@ interface VirtualizedGridListProps {
     onScroll?: ItemGridListProps['onScroll'];
     onScrollEnd?: ItemGridListProps['onScrollEnd'];
     outerRef: RefObject<any>;
+    pageScroll: boolean;
     ref: RefObject<FixedSizeList<GridItemProps> | null>;
     rows?: ItemCardProps['rows'];
     size?: 'compact' | 'default' | 'large';
@@ -97,6 +98,7 @@ const VirtualizedGridList = React.memo(
         onScroll,
         onScrollEnd,
         outerRef,
+        pageScroll,
         ref,
         rows,
         size,
@@ -226,8 +228,10 @@ const VirtualizedGridList = React.memo(
 
         return (
             <FixedSizeList
-                height={height}
-                initialScrollOffset={calculateInitialScrollOffset()}
+                height={
+                    pageScroll ? (tableMeta.rowCount || 0) * (tableMeta.itemHeight || 0) : height
+                }
+                initialScrollOffset={pageScroll ? 0 : calculateInitialScrollOffset()}
                 itemCount={tableMeta.rowCount || 0}
                 itemData={itemData}
                 itemSize={tableMeta.itemHeight || 0}
@@ -235,6 +239,7 @@ const VirtualizedGridList = React.memo(
                 onScroll={handleOnScroll}
                 outerRef={outerRef}
                 ref={ref}
+                style={pageScroll ? { overflowY: 'hidden' } : undefined}
                 width={width}
             >
                 {ListComponent}
@@ -356,6 +361,7 @@ export interface ItemGridListProps {
     onScroll?: (offset: number, direction: 'down' | 'up') => void;
     onScrollEnd?: (offset: number, direction: 'down' | 'up') => void;
     overrideControls?: Partial<ItemControls>;
+    pageScroll?: boolean;
     ref?: Ref<ItemListHandle>;
     rows?: ItemCardProps['rows'];
     size?: 'compact' | 'default' | 'large';
@@ -383,6 +389,7 @@ const BaseItemGridList = ({
     onScroll,
     onScrollEnd,
     overrideControls,
+    pageScroll = false,
     ref,
     rows,
     size = 'default',
@@ -454,7 +461,13 @@ const BaseItemGridList = ({
         const { current: root } = rootRef;
         const { current: outer } = outerRef;
 
-        if (!tableMetaRef.current || !root || !outer || isOverlayScrollbarsInitialized.current) {
+        if (
+            pageScroll ||
+            !tableMetaRef.current ||
+            !root ||
+            !outer ||
+            isOverlayScrollbarsInitialized.current
+        ) {
             return;
         }
 
@@ -466,7 +479,7 @@ const BaseItemGridList = ({
         });
 
         isOverlayScrollbarsInitialized.current = true;
-    }, [initialize, tableMetaVersion]);
+    }, [initialize, pageScroll, tableMetaVersion]);
 
     useEffect(() => {
         return () => {
@@ -515,6 +528,10 @@ const BaseItemGridList = ({
                 if (!el) return;
                 el.style.setProperty('--grid-column-count', String(meta.columnCount));
                 el.style.setProperty('--grid-item-height', `${meta.itemHeight}px`);
+                el.style.setProperty(
+                    '--grid-page-scroll-height',
+                    `${meta.itemHeight * meta.rowCount}px`,
+                );
                 el.style.setProperty('--grid-row-count', String(meta.rowCount));
                 setTableMetaVersion((v) => v + 1);
             }
@@ -531,8 +548,23 @@ const BaseItemGridList = ({
             index: number,
             options?: { align?: 'bottom' | 'center' | 'top'; behavior?: 'auto' | 'smooth' },
         ) => {
-            if (!listRef.current || !tableMetaRef.current) return;
+            if (!tableMetaRef.current) return;
             const row = Math.floor(index / tableMetaRef.current.columnCount);
+
+            if (pageScroll) {
+                const block =
+                    options?.align === 'top'
+                        ? 'start'
+                        : options?.align === 'bottom'
+                          ? 'end'
+                          : (options?.align ?? 'nearest');
+                rootRef.current
+                    ?.querySelector(`[data-grid-row-index="${row}"]`)
+                    ?.scrollIntoView({ behavior: options?.behavior ?? 'smooth', block });
+                return;
+            }
+
+            if (!listRef.current) return;
 
             // Map alignment options to react-window's alignment
             let alignment: 'auto' | 'center' | 'end' | 'smart' | 'start' = 'smart';
@@ -546,13 +578,20 @@ const BaseItemGridList = ({
 
             listRef.current.scrollToItem(row, alignment);
         },
-        [],
+        [pageScroll],
     );
 
-    const scrollToOffset = useCallback((offset: number) => {
-        if (!listRef.current) return;
-        listRef.current.scrollTo(offset);
-    }, []);
+    const scrollToOffset = useCallback(
+        (offset: number) => {
+            if (pageScroll) {
+                rootRef.current?.scrollIntoView({ block: 'start' });
+                return;
+            }
+            if (!listRef.current) return;
+            listRef.current.scrollTo(offset);
+        },
+        [pageScroll],
+    );
 
     // Handle keyboard navigation
     const handleKeyDown = useCallback(
@@ -802,7 +841,8 @@ const BaseItemGridList = ({
     return (
         <motion.div
             className={styles.itemGridContainer}
-            data-overlayscrollbars-initialize=""
+            data-overlayscrollbars-initialize={pageScroll ? undefined : ''}
+            data-page-scroll={pageScroll || undefined}
             onKeyDown={handleKeyDown}
             onMouseDown={(e) => (e.currentTarget as HTMLDivElement).focus()}
             ref={mergedContainerRef}
@@ -832,6 +872,7 @@ const BaseItemGridList = ({
                         onScroll={onScroll ?? (() => {})}
                         onScrollEnd={onScrollEnd ?? (() => {})}
                         outerRef={outerRef}
+                        pageScroll={pageScroll}
                         ref={listRef}
                         rows={rows}
                         size={size}
@@ -901,7 +942,7 @@ const ListComponent = memo((props: ListChildComponentProps<GridItemProps>) => {
     }
 
     return (
-        <div className={styles.itemList} style={style}>
+        <div className={styles.itemList} data-grid-row-index={index} style={style}>
             {items}
         </div>
     );

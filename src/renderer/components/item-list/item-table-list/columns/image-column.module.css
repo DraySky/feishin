@@ -53,6 +53,15 @@
     aspect-ratio: 1 / 1;
 }
 
+.medium-playlist-image-container {
+    width: 37px;
+    height: 37px;
+}
+
+.medium-playlist-image-container img {
+    border-radius: 4px;
+}
+
 .play-button-overlay {
     position: absolute;
     top: 50%;

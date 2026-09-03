@@ -10,6 +10,10 @@
     border: none;
 }
 
+.item-grid-container[data-page-scroll='true'] {
+    height: var(--grid-page-scroll-height, 0);
+}
+
 .auto-sizer-container {
     flex: 1;
 }

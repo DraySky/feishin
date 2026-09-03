@@ -78,6 +78,11 @@ export const useRowPlayControl = (props: ItemTableListInnerColumn) => {
     })();
 
     const isPlaying = isActive && status === PlayerStatus.PLAYING;
+    const activePlaybackState = isPlaying
+        ? PlayerStatus.PLAYING
+        : isActive && status === PlayerStatus.PAUSED
+          ? PlayerStatus.PAUSED
+          : undefined;
 
     const showPlayControls =
         supportsRowPlayControls(props.itemType) &&
@@ -128,9 +133,37 @@ export const useRowPlayControl = (props: ItemTableListInnerColumn) => {
         [album, artist, player, props.itemType, song],
     );
 
+    const handleDirectPlay = useCallback(() => {
+        if (!song || !props.controls.onDirectPlay) {
+            return;
+        }
+
+        const rowId = props.internalState.extractRowId(song);
+        const index = rowId ? props.internalState.findItemIndex(rowId) : -1;
+
+        props.controls.onDirectPlay({
+            event: null,
+            index,
+            internalState: props.internalState,
+            item: song,
+            itemType: props.itemType,
+        });
+    }, [props.controls, props.internalState, props.itemType, song]);
+
+    const handleActivePlayback = useCallback(() => {
+        if (activePlaybackState === PlayerStatus.PLAYING) {
+            player.mediaPause();
+        } else if (activePlaybackState === PlayerStatus.PAUSED) {
+            player.mediaPlay();
+        }
+    }, [activePlaybackState, player]);
+
     return {
+        activePlaybackState,
         album,
         artist,
+        handleActivePlayback,
+        handleDirectPlay: props.controls.onDirectPlay ? handleDirectPlay : undefined,
         handlePlay,
         isActive,
         isPlaying,

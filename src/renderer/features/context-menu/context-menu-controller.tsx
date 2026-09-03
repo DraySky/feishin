@@ -65,7 +65,13 @@ export const ContextMenuController = createCallable<ContextMenuControllerProps, 
         }, [call, cmd, event, event.clientX, event.clientY, libraryId, queryClient]);
 
         return (
-            <ContextMenu>
+            <ContextMenu
+                onOpenChange={(open) => {
+                    if (!open && isExecuted.current) {
+                        call.end();
+                    }
+                }}
+            >
                 <ContextMenu.Target>
                     <div
                         ref={triggerRef}

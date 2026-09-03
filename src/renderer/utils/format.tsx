@@ -171,6 +171,23 @@ export const formatDurationString = (duration: number) => {
     return parts.join(' ');
 };
 
+export const formatCollectionDurationString = (duration: number) => {
+    if (duration < 60 * 60 * 1000) {
+        return formatDurationString(duration);
+    }
+
+    const totalMinutes = Math.round(duration / (60 * 1000));
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    const parts = [`${hours}${i18n.t('datetime.hourShort')}`];
+
+    if (minutes > 0) {
+        parts.push(`${minutes}${i18n.t('datetime.minuteShort')}`);
+    }
+
+    return parts.join(' ');
+};
+
 export const formatDurationStringShort = (duration: number) => {
     const rawDuration = formatDuration(duration).split(':');
 

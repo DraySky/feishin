@@ -378,6 +378,7 @@ export const ItemTableListColumn = memo(ItemTableListColumnBase, (prevProps, nex
         prevProps.enableDrag === nextProps.enableDrag &&
         prevProps.groups === nextProps.groups &&
         prevProps.groupHeaderInfoByRowIndex === nextProps.groupHeaderInfoByRowIndex &&
+        prevProps.isAlbumDetail === nextProps.isAlbumDetail &&
         prevProps.pinnedLeftColumnCount === nextProps.pinnedLeftColumnCount &&
         prevProps.pinnedLeftColumnWidths === nextProps.pinnedLeftColumnWidths &&
         prevProps.size === nextProps.size &&

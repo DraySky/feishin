@@ -20,19 +20,10 @@
 .root {
     width: 100%;
 
-    &:hover {
+    &:hover,
+    &:focus-within {
         .bar {
-            background-color: rgb(255 255 255);
-        }
-
-        .thumb {
-            opacity: 1;
-        }
-    }
-
-    &:focus {
-        .bar {
-            background-color: rgb(255 255 255);
+            background-color: var(--theme-colors-primary-filled);
         }
 
         .thumb {
@@ -47,6 +38,7 @@
     background-color: rgb(255 255 255);
     border-color: rgb(255 255 255);
     border-width: 1px;
+    box-shadow: none;
     opacity: 0;
     transition: opacity 0.2s ease-in-out;
 }

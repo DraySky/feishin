@@ -48,7 +48,7 @@ const PlaylistDetailSongListGrid = lazy(() =>
     ),
 );
 
-export const PlaylistDetailSongListContent = () => {
+export const PlaylistDetailSongListContent = ({ pageScroll = false }: { pageScroll?: boolean }) => {
     const { playlistId } = useParams() as { playlistId: string };
     const server = useCurrentServer();
     const queryClient = useQueryClient();
@@ -91,7 +91,7 @@ export const PlaylistDetailSongListContent = () => {
 
     return (
         <Suspense fallback={<Spinner container />}>
-            <PlaylistDetailSongList data={playlistSongsQuery.data} />
+            <PlaylistDetailSongList data={playlistSongsQuery.data} pageScroll={pageScroll} />
         </Suspense>
     );
 };
@@ -101,9 +101,14 @@ export type OverridePlaylistSongListQuery = Omit<Partial<PlaylistSongListQuery>,
 interface PlaylistDetailSongListViewProps {
     data: PlaylistSongListResponse;
     items?: Song[];
+    pageScroll?: boolean;
 }
 
-export const PlaylistDetailSongListView = ({ data, items }: PlaylistDetailSongListViewProps) => {
+export const PlaylistDetailSongListView = ({
+    data,
+    items,
+    pageScroll = false,
+}: PlaylistDetailSongListViewProps) => {
     const server = useCurrentServer();
     const { display, itemsPerPage, pagination, table } = useListSettings(ItemListKey.PLAYLIST_SONG);
     const { currentPage, onChange: onPageChange } = useItemListPagination();
@@ -123,6 +128,7 @@ export const PlaylistDetailSongListView = ({ data, items }: PlaylistDetailSongLi
                 <PlaylistDetailSongListGrid
                     data={data}
                     items={items}
+                    pageScroll={pageScroll}
                     serverId={server.id}
                     {...paginationProps}
                 />
@@ -140,6 +146,7 @@ export const PlaylistDetailSongListView = ({ data, items }: PlaylistDetailSongLi
                     enableRowHoverHighlight={table.enableRowHoverHighlight}
                     enableVerticalBorders={table.enableVerticalBorders}
                     items={items}
+                    pageScroll={pageScroll}
                     serverId={server.id}
                     size={table.size}
                     {...paginationProps}
@@ -151,7 +158,13 @@ export const PlaylistDetailSongListView = ({ data, items }: PlaylistDetailSongLi
     }
 };
 
-export const PlaylistDetailSongListEdit = ({ data }: { data: PlaylistSongListResponse }) => {
+export const PlaylistDetailSongListEdit = ({
+    data,
+    pageScroll = false,
+}: {
+    data: PlaylistSongListResponse;
+    pageScroll?: boolean;
+}) => {
     const { playlistId } = useParams() as { playlistId: string };
     const server = useCurrentServer();
     const { display, table } = useListSettings(ItemListKey.PLAYLIST_SONG);
@@ -271,6 +284,7 @@ export const PlaylistDetailSongListEdit = ({ data }: { data: PlaylistSongListRes
                     enableHorizontalBorders={table.enableHorizontalBorders}
                     enableRowHoverHighlight={table.enableRowHoverHighlight}
                     enableVerticalBorders={table.enableVerticalBorders}
+                    pageScroll={pageScroll}
                     ref={tableRef}
                     serverId={server.id}
                     size={table.size}
@@ -282,31 +296,55 @@ export const PlaylistDetailSongListEdit = ({ data }: { data: PlaylistSongListRes
     }
 };
 
-const PlaylistDetailTrackView = ({ data }: { data: PlaylistSongListResponse }) => {
+const PlaylistDetailTrackView = ({
+    data,
+    pageScroll,
+}: {
+    data: PlaylistSongListResponse;
+    pageScroll: boolean;
+}) => {
     const { isSmartPlaylist, mode } = useListContext();
 
     if (isSmartPlaylist) {
-        return <PlaylistDetailTrackViewContent data={data} />;
+        return <PlaylistDetailTrackViewContent data={data} pageScroll={pageScroll} />;
     }
 
     if (mode === 'edit') {
-        return <PlaylistDetailSongListEdit data={data} />;
+        return <PlaylistDetailSongListEdit data={data} pageScroll={pageScroll} />;
     }
 
-    return <PlaylistDetailTrackViewContent data={data} />;
+    return <PlaylistDetailTrackViewContent data={data} pageScroll={pageScroll} />;
 };
 
-const PlaylistDetailTrackViewContent = ({ data }: { data: PlaylistSongListResponse }) => {
+const PlaylistDetailTrackViewContent = ({
+    data,
+    pageScroll,
+}: {
+    data: PlaylistSongListResponse;
+    pageScroll: boolean;
+}) => {
     const { sortedAndFilteredSongs } = usePlaylistTrackList(data);
-    return <PlaylistDetailSongListView data={data} items={sortedAndFilteredSongs} />;
+    return (
+        <PlaylistDetailSongListView
+            data={data}
+            items={sortedAndFilteredSongs}
+            pageScroll={pageScroll}
+        />
+    );
 };
 
-const PlaylistDetailSongList = ({ data }: { data: PlaylistSongListResponse }) => {
+const PlaylistDetailSongList = ({
+    data,
+    pageScroll,
+}: {
+    data: PlaylistSongListResponse;
+    pageScroll: boolean;
+}) => {
     const { displayMode, mode } = useListContext();
 
     if (mode !== 'edit' && displayMode === LibraryItem.ALBUM) {
         return <PlaylistDetailAlbumView data={data} />;
     }
 
-    return <PlaylistDetailTrackView data={data} />;
+    return <PlaylistDetailTrackView data={data} pageScroll={pageScroll} />;
 };

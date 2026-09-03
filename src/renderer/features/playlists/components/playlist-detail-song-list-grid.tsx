@@ -29,6 +29,7 @@ interface PlaylistDetailSongListGridProps extends Omit<
     items?: Song[];
     itemsPerPage?: number;
     onPageChange?: (page: number) => void;
+    pageScroll?: boolean;
 }
 
 export const PlaylistDetailSongListGrid = forwardRef<any, PlaylistDetailSongListGridProps>(
@@ -38,10 +39,11 @@ export const PlaylistDetailSongListGrid = forwardRef<any, PlaylistDetailSongList
         items: itemsProp,
         itemsPerPage,
         onPageChange,
+        pageScroll = false,
         saveScrollOffset = true,
     }) => {
         const { handleOnScrollEnd, scrollOffset } = useItemListScrollPersist({
-            enabled: saveScrollOffset,
+            enabled: saveScrollOffset && !pageScroll,
         });
 
         const { searchTerm } = useSearchTermFilter();
@@ -92,13 +94,18 @@ export const PlaylistDetailSongListGrid = forwardRef<any, PlaylistDetailSongList
                 data={dataToRender}
                 enableMultiSelect={enableGridMultiSelect}
                 gap={gridProps.itemGap}
-                initialTop={{
-                    to: scrollOffset ?? 0,
-                    type: 'offset',
-                }}
+                initialTop={
+                    pageScroll
+                        ? undefined
+                        : {
+                              to: scrollOffset ?? 0,
+                              type: 'offset',
+                          }
+                }
                 itemsPerRow={gridProps.itemsPerRowEnabled ? gridProps.itemsPerRow : undefined}
                 itemType={LibraryItem.PLAYLIST_SONG}
-                onScrollEnd={handleOnScrollEnd}
+                onScrollEnd={pageScroll ? undefined : handleOnScrollEnd}
+                pageScroll={pageScroll}
                 rows={rows}
                 size={gridProps.size}
             />
@@ -111,6 +118,7 @@ export const PlaylistDetailSongListGrid = forwardRef<any, PlaylistDetailSongList
                     itemsPerPage={itemsPerPage}
                     onChange={onPageChange!}
                     pageCount={pageCount}
+                    pageScroll={pageScroll}
                     totalItemCount={totalCount}
                 >
                     {grid}

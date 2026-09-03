@@ -66,9 +66,9 @@ const AlbumDetailRoute = lazy(
     () => import('/@/renderer/features/albums/routes/album-detail-route'),
 );
 
-const AlbumColorLabRoute = lazy(
-    () => import('/@/renderer/features/albums/color-lab/album-color-lab-route'),
-);
+const AlbumColorLabRoute = import.meta.env.DEV
+    ? lazy(() => import('/@/renderer/features/albums/color-lab/album-color-lab-route'))
+    : null;
 
 const DummyAlbumDetailRoute = lazy(
     () => import('/@/renderer/features/albums/routes/dummy-album-detail-route'),
@@ -233,7 +233,7 @@ export const AppRouter = () => {
                                             element={<AlbumDetailRoute />}
                                             path={AppRoute.LIBRARY_ALBUMS_DETAIL}
                                         />
-                                        {import.meta.env.DEV && (
+                                        {import.meta.env.DEV && AlbumColorLabRoute && (
                                             <Route
                                                 element={<AlbumColorLabRoute />}
                                                 path={AppRoute.DEV_ALBUM_COLOR_LAB}

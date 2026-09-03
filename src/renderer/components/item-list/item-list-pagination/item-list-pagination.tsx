@@ -10,6 +10,7 @@ interface ItemListWithPaginationProps {
     itemsPerPage: number;
     onChange: (e: number) => void;
     pageCount: number;
+    pageScroll?: boolean;
     totalItemCount: number;
 }
 
@@ -19,10 +20,11 @@ export const ItemListWithPagination = ({
     itemsPerPage,
     onChange,
     pageCount,
+    pageScroll,
     totalItemCount,
 }: ItemListWithPaginationProps) => {
     return (
-        <div className={styles.container}>
+        <div className={styles.container} data-page-scroll={pageScroll || undefined}>
             <Fragment key={currentPage}>{children}</Fragment>
             <div className={styles.paginationContainer}>
                 <Pagination

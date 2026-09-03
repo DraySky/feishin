@@ -54,7 +54,6 @@ export const CenterControls = () => {
         <>
             <div className={styles.controlsContainer}>
                 <div className={styles.buttonsContainer}>
-                    <StopButton />
                     <ShuffleButton />
                     <PreviousButton />
                     {skip?.enabled && <SkipBackwardButton />}
@@ -62,7 +61,6 @@ export const CenterControls = () => {
                     {skip?.enabled && <SkipForwardButton />}
                     <NextButton />
                     <RepeatButton />
-                    <ShuffleAllButton />
                 </div>
             </div>
             <PlayerbarSlider />
@@ -96,25 +94,6 @@ const RadioStopButton = ({ disabled }: { disabled?: boolean }) => {
             disabled={disabled}
             icon={<Icon fill="default" icon="mediaStop" size={buttonSize - 2} />}
             onClick={stop}
-            tooltip={{
-                label: t('player.stop'),
-                openDelay: 0,
-            }}
-            variant="tertiary"
-        />
-    );
-};
-
-const StopButton = ({ disabled }: { disabled?: boolean }) => {
-    const { t } = useTranslation();
-    const buttonSize = useButtonSize();
-    const { mediaStop } = usePlayer();
-
-    return (
-        <PlayerButton
-            disabled={disabled}
-            icon={<Icon fill="default" icon="mediaStop" size={buttonSize - 2} />}
-            onClick={() => mediaStop()}
             tooltip={{
                 label: t('player.stop'),
                 openDelay: 0,

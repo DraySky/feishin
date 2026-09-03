@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react';
 
-import { LibraryItem } from '/@/shared/types/domain-types';
+import { LibraryItem, Song } from '/@/shared/types/domain-types';
 import { ItemListKey } from '/@/shared/types/types';
 
 export type ListDisplayMode = LibraryItem.ALBUM | LibraryItem.SONG;
@@ -16,6 +16,9 @@ interface ListContextProps {
     listKey?: ItemListKey;
     mode?: 'edit' | 'view';
     pageKey: ItemListKey | string;
+    playlistPlayback?: {
+        play: (songs: Song[], selectedSong?: Song) => void;
+    };
     setDisplayMode?: (displayMode: ListDisplayMode) => void;
     setIsSidebarOpen?: (isSidebarOpen: boolean) => void;
     setItemCount?: (itemCount: number) => void;

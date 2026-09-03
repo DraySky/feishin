@@ -1,4 +1,5 @@
 import type { AlbumDetailTone } from './album-detail-palette';
+
 import { parseAlbumDetailColor } from './album-detail-palette';
 
 const SAMPLE_SIZE = 32;
@@ -7,67 +8,26 @@ const MIN_CLUSTER_COVERAGE = 0.06;
 const DISPLAY_CHROMA_TARGET = 0.15;
 const DISPLAY_LIGHTNESS_TARGET = 0.45;
 
-interface SampledPixel {
-    blue: number;
-    green: number;
-    red: number;
-    spatialWeight: number;
-    tone: AlbumDetailTone;
-    x: number;
-    y: number;
-}
-
-export interface AlbumDetailArtworkCluster {
-    backgroundSuitability: number;
-    chromaticEnergy: number;
-    coverage: number;
-    coverageScore: number;
-    displayLightnessScore: number;
-    displayRichnessScore: number;
-    energyScore: number;
-    freshnessScore: number;
-    hueFamily: number;
-    hueFamilyCoverage: number;
-    familyEvidence: number;
-    familyEvidenceNormalized: number;
-    mudPenalty: number;
-    richnessScore: number;
-    rgb: string;
-    salientEnergy: number;
-    score: number;
-    spatialSalience: number;
-    tone: AlbumDetailTone;
-    washedOutPenalty: number;
-}
-
-export interface AlbumDetailArtworkHueFamily {
-    accentQualified: boolean;
-    averageChroma: number;
-    averageLightness: number;
-    darkChromaticQualified: boolean;
-    chromaticEnergy: number;
-    coverage: number;
-    familyEvidence: number;
-    hueFamily: number;
-    hueConsistency: number;
-    rawFamilyEvidence: number;
-    salientEnergy: number;
-    spatialSalience: number;
-    shortlisted: boolean;
-    shortlistReason:
-        | 'dark-chromatic'
-        | 'broad-tint'
-        | 'coherent-accent'
-        | 'high-intensity-accent'
-        | 'relative-evidence'
-        | 'salient-accent'
-        | 'substantial-accent'
-        | null;
-    vividWarmShare: number;
-    warmAverageChroma: number;
-    warmEvidencePenalty: number;
-    warmMudShare: number;
-    warmQuality: number;
+export interface AlbumDetailArtworkAnalysis {
+    accentRescued: boolean;
+    accentRescueReason: 'high-intensity' | 'moderate' | 'salient' | 'substantial' | null;
+    broadTint: AlbumDetailArtworkBroadTint | null;
+    chromaticShare: number;
+    clusters: AlbumDetailArtworkCluster[];
+    correction: AlbumDetailArtworkCorrection;
+    hueFamilies: AlbumDetailArtworkHueFamily[];
+    largestChromaticHueFamilyAverageChroma: number;
+    largestChromaticHueFamilyCoverage: number;
+    meaningfulChromaThreshold: number;
+    mode: 'chromatic' | 'monochrome';
+    neutralClassificationReason: 'coherent-dark-color' | 'meaningful-color' | 'neutral';
+    neutralShare: number;
+    sampleCount: number;
+    selected: AlbumDetailArtworkCluster;
+    strongestChromaticHueFamilyEnergy: number;
+    strongestChromaticHueFamilySalientEnergy: number;
+    vibrancy: AlbumDetailArtworkVibrancy | null;
+    warmDecision: AlbumDetailArtworkWarmDecision;
 }
 
 export interface AlbumDetailArtworkBroadTint {
@@ -82,6 +42,64 @@ export interface AlbumDetailArtworkBroadTint {
     salientEnergy: number;
 }
 
+export interface AlbumDetailArtworkCluster {
+    backgroundSuitability: number;
+    chromaticEnergy: number;
+    coverage: number;
+    coverageScore: number;
+    displayLightnessScore: number;
+    displayRichnessScore: number;
+    energyScore: number;
+    familyEvidence: number;
+    familyEvidenceNormalized: number;
+    freshnessScore: number;
+    hueFamily: number;
+    hueFamilyCoverage: number;
+    mudPenalty: number;
+    rgb: string;
+    richnessScore: number;
+    salientEnergy: number;
+    score: number;
+    spatialSalience: number;
+    tone: AlbumDetailTone;
+    washedOutPenalty: number;
+}
+
+export interface AlbumDetailArtworkCorrection {
+    adjustments: string[];
+    originalRgb: string;
+}
+
+export interface AlbumDetailArtworkHueFamily {
+    accentQualified: boolean;
+    averageChroma: number;
+    averageLightness: number;
+    chromaticEnergy: number;
+    coverage: number;
+    darkChromaticQualified: boolean;
+    familyEvidence: number;
+    hueConsistency: number;
+    hueFamily: number;
+    rawFamilyEvidence: number;
+    salientEnergy: number;
+    shortlisted: boolean;
+    shortlistReason:
+        | 'broad-tint'
+        | 'coherent-accent'
+        | 'dark-chromatic'
+        | 'high-intensity-accent'
+        | 'relative-evidence'
+        | 'salient-accent'
+        | 'substantial-accent'
+        | null;
+    spatialSalience: number;
+    vividWarmShare: number;
+    warmAverageChroma: number;
+    warmEvidencePenalty: number;
+    warmMudShare: number;
+    warmQuality: number;
+}
+
 export interface AlbumDetailArtworkVibrancy {
     adaptiveDisplayChromaTarget: number;
     averageChroma: number;
@@ -93,51 +111,33 @@ export interface AlbumDetailArtworkVibrancy {
     selectedFamily: number;
 }
 
-export interface AlbumDetailArtworkCorrection {
-    adjustments: string[];
-    originalRgb: string;
-}
-
 export interface AlbumDetailArtworkWarmDecision {
-    alternativeFamilyConsidered: number | null;
+    alternativeFamilyConsidered: null | number;
     alternativeTriggered: boolean;
-    evidenceRatio: number | null;
-    cleanerSameFamilyCandidateRgb: string | null;
-    sameFamilyCoverageRatio: number | null;
-    sameFamilyEnergyRatio: number | null;
-    sameFamilyMudPenaltyDifference: number | null;
-    sameFamilySuitabilityDifference: number | null;
-    originalWinningFamily: number | null;
-    selectedFamily: number | null;
-    suitabilityDifference: number | null;
-    topWarmClusterRgb: string | null;
+    cleanerSameFamilyCandidateRgb: null | string;
+    evidenceRatio: null | number;
+    originalWinningFamily: null | number;
+    sameFamilyCoverageRatio: null | number;
+    sameFamilyEnergyRatio: null | number;
+    sameFamilyMudPenaltyDifference: null | number;
+    sameFamilySuitabilityDifference: null | number;
+    selectedFamily: null | number;
+    suitabilityDifference: null | number;
+    topWarmClusterRgb: null | string;
     warmCorrectionApplied: boolean;
 }
 
-export interface AlbumDetailArtworkAnalysis {
-    accentRescued: boolean;
-    accentRescueReason: 'high-intensity' | 'moderate' | 'salient' | 'substantial' | null;
-    broadTint: AlbumDetailArtworkBroadTint | null;
-    chromaticShare: number;
-    clusters: AlbumDetailArtworkCluster[];
-    correction: AlbumDetailArtworkCorrection;
-    hueFamilies: AlbumDetailArtworkHueFamily[];
-    largestChromaticHueFamilyAverageChroma: number;
-    largestChromaticHueFamilyCoverage: number;
-    mode: 'chromatic' | 'monochrome';
-    meaningfulChromaThreshold: number;
-    neutralShare: number;
-    neutralClassificationReason: 'coherent-dark-color' | 'meaningful-color' | 'neutral';
-    sampleCount: number;
-    selected: AlbumDetailArtworkCluster;
-    strongestChromaticHueFamilyEnergy: number;
-    strongestChromaticHueFamilySalientEnergy: number;
-    vibrancy: AlbumDetailArtworkVibrancy | null;
-    warmDecision: AlbumDetailArtworkWarmDecision;
+interface SampledPixel {
+    blue: number;
+    green: number;
+    red: number;
+    spatialWeight: number;
+    tone: AlbumDetailTone;
+    x: number;
+    y: number;
 }
 
-const clamp = (value: number, min: number, max: number) =>
-    Math.min(Math.max(value, min), max);
+const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
 const smoothstep = (min: number, max: number, value: number) => {
     const normalized = clamp((value - min) / (max - min), 0, 1);
@@ -183,10 +183,8 @@ const findBroadHueTint = (
             members.reduce((total, pixel) => total + pixel.tone.lightness, 0) / members.length;
         const chromaticEnergy = coverage * averageChroma;
         const salientEnergy =
-            members.reduce(
-                (total, pixel) => total + pixel.tone.chroma * pixel.spatialWeight,
-                0,
-            ) / sampleCount;
+            members.reduce((total, pixel) => total + pixel.tone.chroma * pixel.spatialWeight, 0) /
+            sampleCount;
         const hueConsistency = scoreHueConsistency(members);
         const darkTint = averageLightness <= 0.38;
         const contributedFamilies = [
@@ -213,12 +211,15 @@ const findBroadHueTint = (
         };
     });
 
-    return signals.sort(
-        (first, second) =>
-            Number(second.qualified) - Number(first.qualified) ||
-            second.chromaticEnergy + second.salientEnergy -
-                (first.chromaticEnergy + first.salientEnergy),
-    )[0] ?? null;
+    return (
+        signals.sort(
+            (first, second) =>
+                Number(second.qualified) - Number(first.qualified) ||
+                second.chromaticEnergy +
+                    second.salientEnergy -
+                    (first.chromaticEnergy + first.salientEnergy),
+        )[0] ?? null
+    );
 };
 
 const getPercentile = (values: number[], percentile: number) => {
@@ -236,10 +237,8 @@ const calculateFamilyVibrancy = (
     const coverage = family.length / sampleCount;
     const chromaticEnergy = coverage * averageChroma;
     const salientEnergy =
-        family.reduce(
-            (total, pixel) => total + pixel.tone.chroma * pixel.spatialWeight,
-            0,
-        ) / sampleCount;
+        family.reduce((total, pixel) => total + pixel.tone.chroma * pixel.spatialWeight, 0) /
+        sampleCount;
     const percentile75Chroma = getPercentile(chromas, 0.75);
     const support =
         clamp(coverage / 0.3, 0, 1) * 0.4 +
@@ -259,8 +258,7 @@ const calculateFamilyVibrancy = (
     };
 };
 
-const warmHueWeight = (hue: number) =>
-    smoothstep(30, 45, hue) * (1 - smoothstep(100, 115, hue));
+const warmHueWeight = (hue: number) => smoothstep(30, 45, hue) * (1 - smoothstep(100, 115, hue));
 
 const warmMudWeight = (tone: AlbumDetailTone) =>
     warmHueWeight(tone.hue) *
@@ -281,12 +279,14 @@ const getAccentReason = (
     family: Pick<
         AlbumDetailArtworkHueFamily,
         | 'averageChroma'
+        | 'averageLightness'
         | 'chromaticEnergy'
         | 'coverage'
         | 'hueConsistency'
         | 'salientEnergy'
         | 'spatialSalience'
     >,
+    neutralShare: number,
 ) => {
     if (
         family.coverage >= 0.085 &&
@@ -326,6 +326,18 @@ const getAccentReason = (
         return 'high-intensity-accent' as const;
     }
 
+    if (
+        neutralShare >= MONOCHROME_SHARE &&
+        family.coverage >= 0.09 &&
+        family.averageChroma >= 0.08 &&
+        family.averageLightness <= 0.4 &&
+        family.hueConsistency >= 0.97 &&
+        family.chromaticEnergy >= 0.008 &&
+        family.salientEnergy >= 0.008
+    ) {
+        return 'coherent-accent' as const;
+    }
+
     return null;
 };
 
@@ -359,10 +371,7 @@ const scoreHueFamilyEvidence = (
     clamp((family.spatialSalience - 0.8) / 0.35, 0, 1) * 0.15;
 
 const calculateWarmFamilyMetrics = (pixels: SampledPixel[], rawFamilyEvidence: number) => {
-    const warmWeight = pixels.reduce(
-        (total, pixel) => total + warmHueWeight(pixel.tone.hue),
-        0,
-    );
+    const warmWeight = pixels.reduce((total, pixel) => total + warmHueWeight(pixel.tone.hue), 0);
 
     if (!warmWeight) {
         return {
@@ -377,8 +386,7 @@ const calculateWarmFamilyMetrics = (pixels: SampledPixel[], rawFamilyEvidence: n
 
     const warmAverageChroma =
         pixels.reduce(
-            (total, pixel) =>
-                total + pixel.tone.chroma * warmHueWeight(pixel.tone.hue),
+            (total, pixel) => total + pixel.tone.chroma * warmHueWeight(pixel.tone.hue),
             0,
         ) / warmWeight;
     const warmMudShare =
@@ -386,9 +394,7 @@ const calculateWarmFamilyMetrics = (pixels: SampledPixel[], rawFamilyEvidence: n
     const vividWarmShare =
         pixels.reduce((total, pixel) => total + vividWarmWeight(pixel.tone), 0) / pixels.length;
     const warmQuality = clamp(
-        vividWarmShare * 0.55 +
-            clamp(warmAverageChroma / 0.16, 0, 1) * 0.45 -
-            warmMudShare * 0.5,
+        vividWarmShare * 0.55 + clamp(warmAverageChroma / 0.16, 0, 1) * 0.45 - warmMudShare * 0.5,
         0,
         1,
     );
@@ -462,10 +468,7 @@ const getCleanerWarmClusterDecision = (
                     candidate.richnessScore > selected.richnessScore &&
                     candidate.backgroundSuitability >= selected.backgroundSuitability - 0.03,
             )
-            .sort(
-                (first, second) =>
-                    second.backgroundSuitability - first.backgroundSuitability,
-            )[0];
+            .sort((first, second) => second.backgroundSuitability - first.backgroundSuitability)[0];
 
         if (cleaner) {
             return {
@@ -507,6 +510,104 @@ const getCleanerWarmClusterDecision = (
     };
 };
 
+const getSupportedAlternativeFamilyCluster = (
+    selected: AlbumDetailArtworkCluster | undefined,
+    clusters: AlbumDetailArtworkCluster[],
+    hueFamilies: AlbumDetailArtworkHueFamily[],
+) => {
+    if (
+        !selected ||
+        warmHueWeight(selected.tone.hue) <= 0.5 ||
+        selected.backgroundSuitability > 0.1
+    ) {
+        return null;
+    }
+
+    const selectedFamily = hueFamilies.find(({ hueFamily }) => hueFamily === selected.hueFamily);
+
+    if (!selectedFamily || selectedFamily.warmQuality >= 0.2) return null;
+
+    return (
+        clusters
+            .filter((candidate) => {
+                if (candidate.hueFamily === selected.hueFamily) return false;
+                const candidateFamily = hueFamilies.find(
+                    ({ hueFamily }) => hueFamily === candidate.hueFamily,
+                );
+
+                return (
+                    candidateFamily &&
+                    candidateFamily.warmQuality >= 0.5 &&
+                    candidateFamily.familyEvidence >= selectedFamily.familyEvidence * 0.75 &&
+                    candidate.score >= selected.score * 0.95 &&
+                    candidate.backgroundSuitability >= selected.backgroundSuitability + 0.08
+                );
+            })
+            .sort((first, second) => second.score - first.score)[0] ?? null
+    );
+};
+
+const scoreRepresentativeSupport = (
+    cluster: AlbumDetailArtworkCluster,
+    vibrancyConfidence: number,
+) =>
+    cluster.coverageScore * 0.3 +
+    cluster.energyScore * 0.25 +
+    clamp(cluster.salientEnergy / 0.025, 0, 1) * 0.2 +
+    clamp((cluster.spatialSalience - 0.8) / 0.35, 0, 1) * 0.1 +
+    cluster.familyEvidenceNormalized * 0.1 +
+    vibrancyConfidence * 0.05;
+
+const getSupportedSameFamilyCluster = (
+    selected: AlbumDetailArtworkCluster,
+    clusters: AlbumDetailArtworkCluster[],
+    vibrancyConfidence: number,
+) => {
+    const selectedSupport = scoreRepresentativeSupport(selected, vibrancyConfidence);
+    const lowConfidenceRepresentative =
+        vibrancyConfidence < 0.1 && selectedSupport <= 0.2 && selected.hueFamilyCoverage >= 0.15;
+
+    if (
+        selected.familyEvidenceNormalized < 0.8 ||
+        (vibrancyConfidence < 0.5 && !lowConfidenceRepresentative)
+    ) {
+        return null;
+    }
+
+    const minimumSupportAdvantage = lowConfidenceRepresentative ? 0.14 : 0.2;
+    const minimumCandidateSupport = selectedSupport + minimumSupportAdvantage;
+
+    return (
+        clusters
+            .filter(
+                (candidate) =>
+                    candidate !== selected &&
+                    candidate.hueFamily === selected.hueFamily &&
+                    scoreRepresentativeSupport(candidate, vibrancyConfidence) >=
+                        minimumCandidateSupport &&
+                    candidate.score >=
+                        selected.score - (lowConfidenceRepresentative ? 0.1 : 0.09) &&
+                    candidate.backgroundSuitability >=
+                        selected.backgroundSuitability -
+                            (lowConfidenceRepresentative ? 0.15 : 0.13) &&
+                    candidate.spatialSalience >=
+                        selected.spatialSalience - (lowConfidenceRepresentative ? 0.1 : 0.08) &&
+                    candidate.tone.chroma >=
+                        selected.tone.chroma * (lowConfidenceRepresentative ? 0.8 : 0.9) &&
+                    candidate.mudPenalty <= selected.mudPenalty + 0.05 &&
+                    (candidate.washedOutPenalty <= selected.washedOutPenalty + 0.1 ||
+                        (lowConfidenceRepresentative &&
+                            scoreRepresentativeSupport(candidate, vibrancyConfidence) >=
+                                selectedSupport + 0.3)),
+            )
+            .sort(
+                (first, second) =>
+                    scoreRepresentativeSupport(second, vibrancyConfidence) -
+                    scoreRepresentativeSupport(first, vibrancyConfidence),
+            )[0] ?? null
+    );
+};
+
 const toRgb = (red: number, green: number, blue: number) =>
     `rgb(${Math.round(red)}, ${Math.round(green)}, ${Math.round(blue)})`;
 
@@ -525,9 +626,7 @@ const toneToRgb = (lightness: number, chroma: number, hue: number) => {
         const normalized = clamp(channel, 0, 1);
         return (
             255 *
-            (normalized <= 0.0031308
-                ? normalized * 12.92
-                : 1.055 * normalized ** (1 / 2.4) - 0.055)
+            (normalized <= 0.0031308 ? normalized * 12.92 : 1.055 * normalized ** (1 / 2.4) - 0.055)
         );
     });
 
@@ -539,7 +638,8 @@ const polishSelectedTone = (
     vibrancy: AlbumDetailArtworkVibrancy,
 ) => {
     const adjustments: string[] = [];
-    let { chroma, hue, lightness } = selected.tone;
+    const { hue } = selected.tone;
+    let { chroma, lightness } = selected.tone;
     const muddyWarm = warmHueWeight(hue) > 0.5 && selected.mudPenalty > 0.2;
     const adaptiveChromaTarget = vibrancy.adaptiveDisplayChromaTarget;
 
@@ -605,6 +705,54 @@ const neutralRgb = (lightness: number) => {
     return toRgb(channel, channel, channel);
 };
 
+const findSubtleNeutralTint = (pixels: SampledPixel[]) => {
+    const tintedPixels = pixels.filter(
+        ({ tone }) => tone.lightness >= 0.12 && tone.chroma >= 0.006,
+    );
+
+    if (!tintedPixels.length) return null;
+
+    const signal = tintedPixels.reduce(
+        (result, { tone }) => {
+            const radians = (tone.hue * Math.PI) / 180;
+            return {
+                chroma: result.chroma + tone.chroma,
+                lightness: result.lightness + tone.lightness * tone.chroma,
+                x: result.x + Math.cos(radians) * tone.chroma,
+                y: result.y + Math.sin(radians) * tone.chroma,
+            };
+        },
+        { chroma: 0, lightness: 0, x: 0, y: 0 },
+    );
+    const vectorMagnitude = Math.hypot(signal.x, signal.y);
+    const coverage = tintedPixels.length / pixels.length;
+    const averageChroma = signal.chroma / tintedPixels.length;
+    const averageLightness = signal.lightness / signal.chroma;
+    const hueConsistency = vectorMagnitude / signal.chroma;
+    const chromaticEnergy = vectorMagnitude / pixels.length;
+    const subtleBroadTint =
+        coverage >= 0.8 &&
+        averageChroma >= 0.01 &&
+        averageChroma <= 0.022 &&
+        averageLightness <= 0.5 &&
+        hueConsistency >= 0.72 &&
+        chromaticEnergy >= 0.01;
+    const coherentDarkTint =
+        coverage >= 0.45 &&
+        averageChroma >= 0.02 &&
+        averageChroma <= 0.03 &&
+        averageLightness <= 0.32 &&
+        hueConsistency >= 0.97 &&
+        chromaticEnergy >= 0.01;
+
+    if (!subtleBroadTint && !coherentDarkTint) return null;
+
+    return {
+        chroma: clamp(averageChroma, 0.018, 0.03),
+        hue: (Math.atan2(signal.y, signal.x) * 180) / Math.PI,
+    };
+};
+
 const createCluster = (
     pixels: SampledPixel[],
     sampleCount: number,
@@ -639,8 +787,8 @@ const createCluster = (
               hueFamily: Math.floor(tone.hue / 60),
               hueFamilyCoverage: 0,
               mudPenalty: 0,
-              richnessScore: 0,
               rgb,
+              richnessScore: 0,
               salientEnergy:
                   pixels.reduce(
                       (total, pixel) => total + pixel.tone.chroma * pixel.spatialWeight,
@@ -648,8 +796,7 @@ const createCluster = (
                   ) / sampleCount,
               score: 0,
               spatialSalience:
-                  pixels.reduce((total, pixel) => total + pixel.spatialWeight, 0) /
-                  pixels.length,
+                  pixels.reduce((total, pixel) => total + pixel.spatialWeight, 0) / pixels.length,
               tone,
               washedOutPenalty: 0,
           }
@@ -693,9 +840,7 @@ export const analyzeAlbumDetailArtworkPixels = (
         pixels.reduce((total, pixel) => total + pixel.tone.lightness, 0) / pixels.length;
     const meaningfulChromaThreshold = getMeaningfulChromaThreshold(averageArtworkLightness);
     const broadTint = findBroadHueTint(chromaticPixels, pixels.length);
-    const broadTintFamilies = new Set(
-        broadTint?.qualified ? broadTint.contributedFamilies : [],
-    );
+    const broadTintFamilies = new Set(broadTint?.qualified ? broadTint.contributedFamilies : []);
     const hueFamilies = new Map<number, SampledPixel[]>();
 
     for (const pixel of chromaticPixels) {
@@ -749,13 +894,13 @@ export const analyzeAlbumDetailArtworkPixels = (
                 coverage,
                 darkChromaticQualified,
                 ...warmMetrics,
-                hueFamily,
                 hueConsistency,
+                hueFamily,
                 rawFamilyEvidence,
                 salientEnergy,
-                spatialSalience,
                 shortlisted: false,
                 shortlistReason: null,
+                spatialSalience,
             };
         },
     );
@@ -765,7 +910,7 @@ export const analyzeAlbumDetailArtworkPixels = (
     );
     const hueFamilyStats = rawHueFamilyStats.map((family) => {
         const { familyEvidence } = family;
-        const accentReason = getAccentReason(family);
+        const accentReason = getAccentReason(family, neutralShare);
         const relativeEvidence =
             familyEvidence >= 0.12 && familyEvidence >= bestFamilyEvidence * 0.68;
         const shortlistReason: AlbumDetailArtworkHueFamily['shortlistReason'] =
@@ -776,7 +921,7 @@ export const analyzeAlbumDetailArtworkPixels = (
                   ? 'relative-evidence'
                   : broadTintFamilies.has(family.hueFamily)
                     ? 'broad-tint'
-                  : null);
+                    : null);
 
         return {
             ...family,
@@ -789,9 +934,7 @@ export const analyzeAlbumDetailArtworkPixels = (
     const largestHueFamily = [...hueFamilyStats].sort(
         (first, second) => second.coverage - first.coverage,
     )[0];
-    const largestChromaticHueFamilyCoverage = largestHueFamily
-        ? largestHueFamily.coverage
-        : 0;
+    const largestChromaticHueFamilyCoverage = largestHueFamily ? largestHueFamily.coverage : 0;
     const largestChromaticHueFamilyAverageChroma = largestHueFamily
         ? largestHueFamily.averageChroma
         : 0;
@@ -803,14 +946,11 @@ export const analyzeAlbumDetailArtworkPixels = (
         0,
         ...hueFamilyStats.map(({ salientEnergy }) => salientEnergy),
     );
-    const shortlistedAccent = hueFamilyStats.find(
-        ({ shortlistReason }) => shortlistReason === 'substantial-accent',
-    ) ??
+    const shortlistedAccent =
+        hueFamilyStats.find(({ shortlistReason }) => shortlistReason === 'substantial-accent') ??
         hueFamilyStats.find(({ shortlistReason }) => shortlistReason === 'salient-accent') ??
         hueFamilyStats.find(({ shortlistReason }) => shortlistReason === 'coherent-accent') ??
-        hueFamilyStats.find(
-            ({ shortlistReason }) => shortlistReason === 'high-intensity-accent',
-        );
+        hueFamilyStats.find(({ shortlistReason }) => shortlistReason === 'high-intensity-accent');
     const accentRescueReason =
         neutralShare < MONOCHROME_SHARE
             ? null
@@ -820,9 +960,9 @@ export const analyzeAlbumDetailArtworkPixels = (
                 ? 'salient'
                 : shortlistedAccent?.shortlistReason === 'coherent-accent'
                   ? 'moderate'
-                : shortlistedAccent?.shortlistReason === 'high-intensity-accent'
-                  ? 'high-intensity'
-                  : null;
+                  : shortlistedAccent?.shortlistReason === 'high-intensity-accent'
+                    ? 'high-intensity'
+                    : null;
     const accentRescued = accentRescueReason !== null;
     const darkChromaticRescued = hueFamilyStats.some(
         ({ darkChromaticQualified }) => darkChromaticQualified,
@@ -861,25 +1001,31 @@ export const analyzeAlbumDetailArtworkPixels = (
             0.28,
             0.42,
         );
-        const rgb = neutralRgb(lightness);
+        const subtleTint = findSubtleNeutralTint(pixels);
+        const rgb = subtleTint
+            ? toneToRgb(lightness, subtleTint.chroma, subtleTint.hue)
+            : neutralRgb(lightness);
         const tone = parseAlbumDetailColor(rgb);
 
         return tone
             ? {
-                  accentRescueReason,
                   accentRescued,
+                  accentRescueReason,
                   broadTint,
                   chromaticShare,
                   clusters: [],
+                  correction: {
+                      adjustments: [subtleTint ? 'neutral-tint-preserved' : 'neutral'],
+                      originalRgb: rgb,
+                  },
                   hueFamilies: hueFamilyStats,
                   largestChromaticHueFamilyAverageChroma,
                   largestChromaticHueFamilyCoverage,
-                  mode: 'monochrome',
                   meaningfulChromaThreshold,
-                  neutralShare,
+                  mode: 'monochrome',
                   neutralClassificationReason,
+                  neutralShare,
                   sampleCount: pixels.length,
-                  correction: { adjustments: ['neutral'], originalRgb: rgb },
                   selected: {
                       backgroundSuitability: 1,
                       chromaticEnergy: 0,
@@ -894,8 +1040,8 @@ export const analyzeAlbumDetailArtworkPixels = (
                       hueFamily: 0,
                       hueFamilyCoverage: 0,
                       mudPenalty: 0,
-                      richnessScore: 0,
                       rgb,
+                      richnessScore: 0,
                       salientEnergy: 0,
                       score: 1,
                       spatialSalience: 1,
@@ -908,9 +1054,9 @@ export const analyzeAlbumDetailArtworkPixels = (
                   warmDecision: {
                       alternativeFamilyConsidered: null,
                       alternativeTriggered: false,
+                      cleanerSameFamilyCandidateRgb: null,
                       evidenceRatio: null,
                       originalWinningFamily: null,
-                      cleanerSameFamilyCandidateRgb: null,
                       sameFamilyCoverageRatio: null,
                       sameFamilyEnergyRatio: null,
                       sameFamilyMudPenaltyDifference: null,
@@ -945,12 +1091,11 @@ export const analyzeAlbumDetailArtworkPixels = (
 
     const shortlistedFamilies = hueFamilyStats.filter(({ shortlisted }) => shortlisted);
     const eligibleFamilies = new Set(
-        (
-            shortlistedFamilies.length
-                ? shortlistedFamilies
-                : largestHueFamily
-                  ? [largestHueFamily]
-                  : []
+        (shortlistedFamilies.length
+            ? shortlistedFamilies
+            : largestHueFamily
+              ? [largestHueFamily]
+              : []
         ).map(({ hueFamily }) => hueFamily),
     );
     const clusters = [...buckets.values()]
@@ -963,28 +1108,22 @@ export const analyzeAlbumDetailArtworkPixels = (
             const coverageScore = clamp(cluster.coverage / 0.3, 0, 1);
             const chromaticEnergy = cluster.coverage * cluster.tone.chroma;
             const energyScore = clamp(chromaticEnergy / 0.03, 0, 1);
-            const family = hueFamilyStats.find(
-                ({ hueFamily }) => hueFamily === cluster.hueFamily,
-            );
+            const family = hueFamilyStats.find(({ hueFamily }) => hueFamily === cluster.hueFamily);
             const familyEvidence = family?.familyEvidence ?? 0;
             const familyEvidenceNormalized =
                 bestFamilyEvidence > 0 ? familyEvidence / bestFamilyEvidence : 0;
             const hueFamilyCoverage = family?.coverage ?? 0;
             const salienceScore = clamp(cluster.salientEnergy / 0.025, 0, 1);
-            const tinyClusterPenalty =
-                1 - clamp(cluster.coverage / MIN_CLUSTER_COVERAGE, 0, 1);
+            const tinyClusterPenalty = 1 - clamp(cluster.coverage / MIN_CLUSTER_COVERAGE, 0, 1);
             const washedOutPenalty =
                 smoothstep(0.58, 0.74, cluster.tone.lightness) *
                 (1 - smoothstep(0.08, 0.12, cluster.tone.chroma));
             const brightPenalty = smoothstep(0.68, 0.86, cluster.tone.lightness);
             const mudHue =
-                smoothstep(45, 72, cluster.tone.hue) *
-                (1 - smoothstep(115, 140, cluster.tone.hue));
+                smoothstep(45, 72, cluster.tone.hue) * (1 - smoothstep(115, 140, cluster.tone.hue));
             const mudLightness = 1 - smoothstep(0.62, 0.78, cluster.tone.lightness);
             const mudPenalty =
-                mudHue *
-                mudLightness *
-                (1 - smoothstep(0.12, 0.18, cluster.tone.chroma));
+                mudHue * mudLightness * (1 - smoothstep(0.12, 0.18, cluster.tone.chroma));
             const freshnessScore = clamp(
                 lightnessScore * 0.45 +
                     richnessScore * 0.55 -
@@ -1027,21 +1166,36 @@ export const analyzeAlbumDetailArtworkPixels = (
         .sort((first, second) => second.score - first.score);
 
     const cleanerWarmDecision = getCleanerWarmClusterDecision(clusters[0], clusters);
-    const selectedCluster = cleanerWarmDecision?.selected ?? clusters[0];
-    const selectedFamilyPixels = selectedCluster
-        ? hueFamilies.get(selectedCluster.hueFamily)
+    const nominalCluster = cleanerWarmDecision?.selected ?? clusters[0];
+    const alternativeFamilyCluster = !cleanerWarmDecision?.applied
+        ? getSupportedAlternativeFamilyCluster(nominalCluster, clusters, hueFamilyStats)
+        : null;
+    const familySelectedCluster = alternativeFamilyCluster ?? nominalCluster;
+    const selectedFamilyPixels = familySelectedCluster
+        ? hueFamilies.get(familySelectedCluster.hueFamily)
         : undefined;
     const vibrancy =
-        selectedCluster && selectedFamilyPixels
+        familySelectedCluster && selectedFamilyPixels
             ? calculateFamilyVibrancy(
                   selectedFamilyPixels,
                   pixels.length,
-                  selectedCluster.hueFamily,
+                  familySelectedCluster.hueFamily,
               )
             : null;
+    const supportedSameFamilyCluster =
+        familySelectedCluster && vibrancy && !cleanerWarmDecision?.applied
+            ? getSupportedSameFamilyCluster(familySelectedCluster, clusters, vibrancy.confidence)
+            : null;
+    const selectedCluster = supportedSameFamilyCluster ?? familySelectedCluster;
     const polishedSelection =
         selectedCluster && vibrancy ? polishSelectedTone(selectedCluster, vibrancy) : null;
 
+    if (alternativeFamilyCluster && polishedSelection) {
+        polishedSelection.correction.adjustments.unshift('supported-family-switch');
+    }
+    if (supportedSameFamilyCluster && polishedSelection) {
+        polishedSelection.correction.adjustments.unshift('support-aware-representative');
+    }
     if (cleanerWarmDecision?.applied && polishedSelection) {
         polishedSelection.correction.adjustments.unshift('warm-cleaner-candidate');
     }
@@ -1055,9 +1209,7 @@ export const analyzeAlbumDetailArtworkPixels = (
         ({ hueFamily }) => hueFamily === rawWinningFamily?.hueFamily,
     );
     const selectedFamily = polishedSelection
-        ? hueFamilyStats.find(
-              ({ hueFamily }) => hueFamily === polishedSelection.selected.hueFamily,
-          )
+        ? hueFamilyStats.find(({ hueFamily }) => hueFamily === polishedSelection.selected.hueFamily)
         : null;
     const originalWasMuddyWarm = Boolean(
         rawWinningFamily &&
@@ -1072,8 +1224,8 @@ export const analyzeAlbumDetailArtworkPixels = (
 
     return polishedSelection
         ? {
-              accentRescueReason,
               accentRescued,
+              accentRescueReason,
               broadTint,
               chromaticShare,
               clusters,
@@ -1081,10 +1233,10 @@ export const analyzeAlbumDetailArtworkPixels = (
               hueFamilies: hueFamilyStats,
               largestChromaticHueFamilyAverageChroma,
               largestChromaticHueFamilyCoverage,
-              mode: 'chromatic',
               meaningfulChromaThreshold,
-              neutralShare,
+              mode: 'chromatic',
               neutralClassificationReason,
+              neutralShare,
               sampleCount: pixels.length,
               selected: polishedSelection.selected,
               strongestChromaticHueFamilyEnergy,
@@ -1092,22 +1244,20 @@ export const analyzeAlbumDetailArtworkPixels = (
               vibrancy,
               warmDecision: {
                   alternativeFamilyConsidered: alternativeTriggered
-                      ? selectedFamily?.hueFamily ?? null
+                      ? (selectedFamily?.hueFamily ?? null)
                       : null,
                   alternativeTriggered,
-                  evidenceRatio:
-                      alternativeTriggered && rawWinningFamily?.familyEvidence
-                          ? (selectedFamily?.familyEvidence ?? 0) /
-                            rawWinningFamily.familyEvidence
-                          : null,
-                  originalWinningFamily: rawWinningFamily?.hueFamily ?? null,
                   cleanerSameFamilyCandidateRgb: cleanerWarmDecision?.applied
                       ? polishedSelection.correction.originalRgb
                       : null,
+                  evidenceRatio:
+                      alternativeTriggered && rawWinningFamily?.familyEvidence
+                          ? (selectedFamily?.familyEvidence ?? 0) / rawWinningFamily.familyEvidence
+                          : null,
+                  originalWinningFamily: rawWinningFamily?.hueFamily ?? null,
                   sameFamilyCoverageRatio: cleanerWarmDecision?.coverageRatio ?? null,
                   sameFamilyEnergyRatio: cleanerWarmDecision?.energyRatio ?? null,
-                  sameFamilyMudPenaltyDifference:
-                      cleanerWarmDecision?.mudPenaltyDifference ?? null,
+                  sameFamilyMudPenaltyDifference: cleanerWarmDecision?.mudPenaltyDifference ?? null,
                   sameFamilySuitabilityDifference:
                       cleanerWarmDecision?.suitabilityDifference ?? null,
                   selectedFamily: selectedFamily?.hueFamily ?? null,

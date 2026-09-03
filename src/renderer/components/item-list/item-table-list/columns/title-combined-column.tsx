@@ -23,7 +23,7 @@ import { usePlayButtonBehavior } from '/@/renderer/store';
 import { ExplicitIndicator } from '/@/shared/components/explicit-indicator/explicit-indicator';
 import { Icon } from '/@/shared/components/icon/icon';
 import { Text } from '/@/shared/components/text/text';
-import { Folder, LibraryItem, QueueSong } from '/@/shared/types/domain-types';
+import { ExplicitStatus, Folder, LibraryItem, QueueSong } from '/@/shared/types/domain-types';
 import { Play } from '/@/shared/types/types';
 
 export const DefaultTitleCombinedColumn = (props: ItemTableListInnerColumn) => {
@@ -197,6 +197,12 @@ export const QueueSongTitleCombinedColumn = (props: ItemTableListInnerColumn) =>
     const playButtonBehavior = usePlayButtonBehavior();
     const [isHovered, setIsHovered] = useState(false);
     const isActive = useIsActiveRow(song?.id, song?._uniqueId);
+    const isMediumPlaylistSong =
+        props.itemType === LibraryItem.PLAYLIST_SONG && props.size === 'medium';
+    const isMediumAlbumDetailSong =
+        props.isAlbumDetail && props.itemType === LibraryItem.SONG && props.size === 'medium';
+    const isMediumDetailSong = isMediumPlaylistSong || isMediumAlbumDetailSong;
+    const showArtworkPlayControl = props.itemType !== LibraryItem.PLAYLIST_SONG;
 
     const handlePlay = (playType: Play, event: React.MouseEvent<HTMLButtonElement>) => {
         if (!item) {
@@ -268,11 +274,18 @@ export const QueueSongTitleCombinedColumn = (props: ItemTableListInnerColumn) =>
             >
                 {!hasAlbumGroupColumn && (
                     <div
-                        className={styles.imageContainer}
-                        onMouseEnter={() => setIsHovered(true)}
-                        onMouseLeave={() => setIsHovered(false)}
+                        className={clsx(styles.imageContainer, {
+                            [styles.mediumPlaylistImageContainer]: isMediumPlaylistSong,
+                        })}
+                        onMouseEnter={showArtworkPlayControl ? () => setIsHovered(true) : undefined}
+                        onMouseLeave={
+                            showArtworkPlayControl ? () => setIsHovered(false) : undefined
+                        }
                     >
                         <ItemImage
+                            containerClassName={
+                                isMediumPlaylistSong ? styles.mediumPlaylistImage : undefined
+                            }
                             explicitStatus={item?.explicitStatus}
                             id={item?.imageId}
                             itemType={item?._itemType}
@@ -280,7 +293,7 @@ export const QueueSongTitleCombinedColumn = (props: ItemTableListInnerColumn) =>
                             src={item?.imageUrl}
                             type="table"
                         />
-                        {isHovered && (
+                        {showArtworkPlayControl && isHovered && (
                             <div
                                 className={clsx(styles.playButtonOverlay, {
                                     [styles.compactPlayButtonOverlay]: props.size === 'compact',
@@ -312,6 +325,7 @@ export const QueueSongTitleCombinedColumn = (props: ItemTableListInnerColumn) =>
                         [styles.alignLeft]: align === 'start',
                         [styles.alignRight]: align === 'end',
                         [styles.compact]: props.size === 'compact',
+                        [styles.mediumDetailTextContainer]: isMediumDetailSong,
                     })}
                 >
                     <Text
@@ -319,6 +333,7 @@ export const QueueSongTitleCombinedColumn = (props: ItemTableListInnerColumn) =>
                             [styles.active]: isActive,
                             [styles.compact]: props.size === 'compact',
                             [styles.large]: props.size === 'large',
+                            [styles.mediumDetailTitle]: isMediumDetailSong,
                             [styles.title]: true,
                         })}
                         isNoSelect
@@ -326,7 +341,9 @@ export const QueueSongTitleCombinedColumn = (props: ItemTableListInnerColumn) =>
                         truncate
                         {...titleLinkProps}
                     >
-                        <ExplicitIndicator explicitStatus={song?.explicitStatus} />
+                        {!isMediumDetailSong && (
+                            <ExplicitIndicator explicitStatus={song?.explicitStatus} />
+                        )}
                         {row.name as string}
                         {song?.trackSubtitle && props.itemType !== LibraryItem.QUEUE_SONG && (
                             <span
@@ -340,7 +357,19 @@ export const QueueSongTitleCombinedColumn = (props: ItemTableListInnerColumn) =>
                             </span>
                         )}
                     </Text>
-                    <div className={styles.artists}>
+                    <div
+                        className={
+                            isMediumDetailSong ? styles.mediumDetailSecondaryLine : styles.artists
+                        }
+                    >
+                        {isMediumDetailSong && song?.explicitStatus === ExplicitStatus.EXPLICIT && (
+                            <span
+                                aria-label="Explicit"
+                                className={styles.mediumDetailExplicitBadge}
+                            >
+                                E
+                            </span>
+                        )}
                         <JoinedArtists
                             artistName={item.artistName}
                             artists={item.artists}

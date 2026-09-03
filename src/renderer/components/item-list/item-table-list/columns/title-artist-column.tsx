@@ -16,7 +16,7 @@ import { JoinedArtists } from '/@/renderer/features/albums/components/joined-art
 import { ExplicitIndicator } from '/@/shared/components/explicit-indicator/explicit-indicator';
 import { Icon } from '/@/shared/components/icon/icon';
 import { Text } from '/@/shared/components/text/text';
-import { Folder, LibraryItem, QueueSong } from '/@/shared/types/domain-types';
+import { ExplicitStatus, Folder, LibraryItem, QueueSong } from '/@/shared/types/domain-types';
 
 export const DefaultTitleArtistColumn = (props: ItemTableListInnerColumn) => {
     const rowItem = props.getRowItem?.(props.rowIndex) ?? (props.data as any[])[props.rowIndex];
@@ -95,6 +95,8 @@ export const QueueSongTitleArtistColumn = (props: ItemTableListInnerColumn) => {
 
     const song = rowItem as QueueSong;
     const isActive = useIsActiveRow(song?.id, song?._uniqueId);
+    const isMediumAlbumDetailSong =
+        props.isAlbumDetail && props.itemType === LibraryItem.SONG && props.size === 'medium';
     const align = props.columns[props.columnIndex]?.align || 'start';
     const alignClass =
         align === 'center' ? 'align-center' : align === 'end' ? 'align-right' : 'align-left';
@@ -124,6 +126,7 @@ export const QueueSongTitleArtistColumn = (props: ItemTableListInnerColumn) => {
                     className={clsx(styles.textContainer, styles[alignClass], {
                         [styles.active]: isActive,
                         [styles.compact]: props.size === 'compact',
+                        [styles.mediumAlbumDetailTextContainer]: isMediumAlbumDetailSong,
                     })}
                 >
                     <Text
@@ -131,13 +134,16 @@ export const QueueSongTitleArtistColumn = (props: ItemTableListInnerColumn) => {
                             [styles.active]: isActive,
                             [styles.compact]: props.size === 'compact',
                             [styles.large]: props.size === 'large',
+                            [styles.mediumAlbumDetailTitle]: isMediumAlbumDetailSong,
                             [styles.title]: true,
                         })}
                         isNoSelect
                         size="md"
                         {...titleLinkProps}
                     >
-                        <ExplicitIndicator explicitStatus={song?.explicitStatus} />
+                        {!isMediumAlbumDetailSong && (
+                            <ExplicitIndicator explicitStatus={song?.explicitStatus} />
+                        )}
                         {row.name as string}
                         {song?.trackSubtitle && props.itemType !== LibraryItem.QUEUE_SONG && (
                             <Text
@@ -154,7 +160,22 @@ export const QueueSongTitleArtistColumn = (props: ItemTableListInnerColumn) => {
                             </Text>
                         )}
                     </Text>
-                    <div className={styles.artists}>
+                    <div
+                        className={
+                            isMediumAlbumDetailSong
+                                ? styles.mediumAlbumDetailSecondaryLine
+                                : styles.artists
+                        }
+                    >
+                        {isMediumAlbumDetailSong &&
+                            song?.explicitStatus === ExplicitStatus.EXPLICIT && (
+                                <span
+                                    aria-label="Explicit"
+                                    className={styles.mediumAlbumDetailExplicitBadge}
+                                >
+                                    E
+                                </span>
+                            )}
                         <JoinedArtists
                             artistName={item.artistName}
                             artists={item.artists}

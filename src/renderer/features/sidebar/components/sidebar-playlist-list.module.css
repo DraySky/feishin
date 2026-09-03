@@ -14,14 +14,20 @@
     width: 100%;
     cursor: default;
     border-radius: var(--theme-radius-md);
+    isolation: isolate;
 }
 
-.row-hover {
-    .metadata,
-    .compact-name {
-        margin-right: 100px;
-    }
+.row::before {
+    position: absolute;
+    inset: 1px 0;
+    z-index: -1;
+    pointer-events: none;
+    content: '';
+    border-radius: inherit;
+}
 
+.row-hover::before,
+.row-open::before {
     background-color: var(--theme-colors-surface);
 }
 

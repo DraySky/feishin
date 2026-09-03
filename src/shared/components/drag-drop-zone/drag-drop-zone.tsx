@@ -16,6 +16,7 @@ export interface DragDropZoneFileProps extends DivProps {
     children: ReactNode;
     mode: 'file';
     onFileSelected: (file: File) => Promise<void> | void;
+    showDropIndicator?: boolean;
 }
 
 export type DragDropZoneProps = DragDropZoneFileProps | DragDropZoneTextProps;
@@ -154,7 +155,15 @@ const DragDropZoneText = ({ icon, onItemSelected, validateItem }: DragDropZoneTe
 };
 
 const DragDropZoneFile = (props: DragDropZoneFileProps) => {
-    const { accept = 'image/*', children, className, mode, onFileSelected, ...divProps } = props;
+    const {
+        accept = 'image/*',
+        children,
+        className,
+        mode,
+        onFileSelected,
+        showDropIndicator = true,
+        ...divProps
+    } = props;
     void mode;
     const fileDragDepth = useRef(0);
     const [fileDragOver, setFileDragOver] = useState(false);
@@ -213,7 +222,7 @@ const DragDropZoneFile = (props: DragDropZoneFileProps) => {
         <div
             {...divProps}
             className={clsx(className, {
-                [styles.fileTargetDragOver]: fileDragOver,
+                [styles.fileTargetDragOver]: fileDragOver && showDropIndicator,
             })}
             onDragEnter={handleDragEnter}
             onDragLeave={handleDragLeave}

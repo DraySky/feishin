@@ -51,6 +51,7 @@ interface LibraryHeaderProps {
     };
     loading?: boolean;
     onImageFileDrop?: (file: File) => Promise<void> | void;
+    showImageDropIndicator?: boolean;
     title: string;
     topRight?: ReactNode;
 }
@@ -65,6 +66,7 @@ export const LibraryHeader = forwardRef(
             imageUrl,
             item,
             onImageFileDrop,
+            showImageDropIndicator,
             title,
             topRight,
         }: LibraryHeaderProps,
@@ -168,6 +170,7 @@ export const LibraryHeader = forwardRef(
                         className={styles.imageSection}
                         mode="file"
                         onFileSelected={(file) => void onImageFileDrop(file)}
+                        showDropIndicator={showImageDropIndicator}
                         {...imageSectionSharedProps}
                     >
                         <ItemImage

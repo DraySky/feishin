@@ -17,6 +17,7 @@ const ListWithSidebarContainerContext = createContext<ListWithSidebarContainerCo
 
 interface ListWithSidebarContainerProps {
     children: ReactNode;
+    pageScroll?: boolean;
     sidebarBreakpoint?: number;
     useBreakpoint?: boolean;
 }
@@ -65,6 +66,7 @@ function SidebarPortal({ children }: SidebarPortalProps) {
 
 export const ListWithSidebarContainer = ({
     children,
+    pageScroll = false,
     useBreakpoint = false,
 }: ListWithSidebarContainerProps) => {
     const [sidebarElement, setSidebarElement] = useState<HTMLDivElement | null>(null);
@@ -81,6 +83,7 @@ export const ListWithSidebarContainer = ({
         <ListWithSidebarContainerContext.Provider value={contextValue}>
             <div
                 className={styles.container}
+                data-page-scroll={pageScroll || undefined}
                 data-sidebar-open={useBreakpoint ? undefined : isSidebarOpen}
                 data-use-breakpoint={useBreakpoint}
             >

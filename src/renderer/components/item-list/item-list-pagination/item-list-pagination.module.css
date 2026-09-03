@@ -13,3 +13,8 @@
     overflow: hidden;
     border-top: 1px solid var(--theme-colors-border);
 }
+
+.container[data-page-scroll='true'] {
+    height: auto;
+    overflow: visible;
+}

@@ -1,9 +1,75 @@
+/* stylelint-disable selector-class-pattern */
 .container {
     width: 100vw;
     height: 100%;
     background: rgb(0 0 0);
     border-top: 1px solid rgb(255 255 255 / 10%);
+    border-radius: 0;
+    box-shadow: none;
+    backdrop-filter: none;
 }
+
+.container :global(.mantine-ActionIcon-root[data-variant='subtle']) {
+    color: rgb(255 255 255 / 72%);
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+    scale: none;
+    transition:
+        color 140ms ease,
+        filter 140ms ease,
+        transform 140ms ease;
+}
+
+.container :global(.mantine-ActionIcon-root[data-variant='subtle']):hover {
+    color: var(--theme-colors-foreground);
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+    filter: brightness(1.12);
+    transform: scale(1.06);
+}
+
+.container :global(.mantine-ActionIcon-root[data-variant='subtle']):active {
+    background: transparent;
+    transform: scale(0.96);
+}
+
+.center-grid-item :global(.mantine-ActionIcon-root[data-variant='subtle']) {
+    transform: none;
+    scale: none;
+    translate: none;
+    transition:
+        color 140ms ease,
+        filter 140ms ease;
+}
+
+.center-grid-item :global(.mantine-ActionIcon-root[data-variant='subtle']):hover,
+.center-grid-item :global(.mantine-ActionIcon-root[data-variant='subtle']):active {
+    filter: none;
+    transform: none;
+    scale: none;
+    translate: none;
+}
+
+.center-grid-item :global(.mantine-ActionIcon-root[data-variant='subtle']) svg {
+    transform-origin: center;
+    transition:
+        color 140ms ease,
+        filter 140ms ease,
+        transform 140ms ease;
+}
+
+.center-grid-item :global(.mantine-ActionIcon-root[data-variant='subtle']):hover svg {
+    filter: brightness(1.12);
+    transform: scale(1.08);
+}
+
+.center-grid-item :global(.mantine-ActionIcon-root[data-variant='subtle']):active svg {
+    filter: brightness(1.06);
+    transform: scale(1.03);
+}
+/* stylelint-enable selector-class-pattern */
 
 .controls-grid {
     display: grid;

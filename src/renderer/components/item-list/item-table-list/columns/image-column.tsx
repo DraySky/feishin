@@ -29,6 +29,8 @@ const ImageColumnBase = (props: ItemTableListInnerColumn) => {
 
     const isFolder = (rowItem as unknown as Folder)?._itemType === LibraryItem.FOLDER;
     const shouldShowFolderIcon = isFolder && !item?.imageId && !item?.imageUrl;
+    const isMediumPlaylistSong =
+        props.itemType === LibraryItem.PLAYLIST_SONG && props.size === 'medium';
 
     const handlePlay = (playType: Play, event: React.MouseEvent<HTMLButtonElement>) => {
         if (!item) {
@@ -90,6 +92,7 @@ const ImageColumnBase = (props: ItemTableListInnerColumn) => {
                                 props.size === 'medium' ||
                                 props.size === 'default' ||
                                 props.size === 'large',
+                            [styles.mediumPlaylistImageContainer]: isMediumPlaylistSong,
                         })}
                         enableDebounce={true}
                         enableViewport={false}

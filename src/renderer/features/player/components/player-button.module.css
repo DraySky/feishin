@@ -30,21 +30,53 @@
     }
 }
 
-.player-button.active {
+.active {
+    position: relative;
+    overflow: visible;
+
     svg {
         fill: var(--theme-colors-primary-filled);
+    }
+
+    &::after {
+        position: absolute;
+        bottom: 2px;
+        left: 50%;
+        width: 4px;
+        height: 4px;
+        content: '';
+        background: var(--theme-colors-primary-filled);
+        border-radius: 50%;
+        transform: translateX(-50%);
     }
 }
 
 .main {
     background: var(--theme-colors-foreground) !important;
+    border: 0;
     border-radius: 50%;
+    box-shadow: none;
+    scale: none;
+    transition:
+        filter 140ms ease,
+        transform 140ms ease;
 
     svg {
         display: flex;
         color: var(--theme-colors-background);
         fill: var(--theme-colors-background);
     }
+}
+
+.main:hover {
+    background: var(--theme-colors-foreground) !important;
+    box-shadow: none;
+    filter: brightness(1.08);
+    transform: scale(1.05);
+}
+
+.main:active {
+    transform: scale(0.97);
 }
 
 .secondary {

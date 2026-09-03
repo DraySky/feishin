@@ -3,7 +3,7 @@ import { Dispatch, SetStateAction } from 'react';
 import i18n from '/@/i18n/i18n';
 import { useSortByFilter } from '/@/renderer/features/shared/hooks/use-sort-by-filter';
 import { useCurrentServer } from '/@/renderer/store';
-import { Button } from '/@/shared/components/button/button';
+import { Button, ButtonProps } from '/@/shared/components/button/button';
 import { DropdownMenu } from '/@/shared/components/dropdown-menu/dropdown-menu';
 import {
     AlbumArtistListSort,
@@ -20,6 +20,7 @@ import {
 import { ItemListKey } from '/@/shared/types/types';
 
 interface ListSortByDropdownProps {
+    buttonProps?: ButtonProps;
     defaultSortByValue: string;
     disabled?: boolean;
     includeId?: boolean;
@@ -30,6 +31,7 @@ interface ListSortByDropdownProps {
 }
 
 export const ListSortByDropdown = ({
+    buttonProps,
     defaultSortByValue,
     disabled,
     itemType,
@@ -55,7 +57,7 @@ export const ListSortByDropdown = ({
                 {target ? (
                     target
                 ) : (
-                    <Button disabled={disabled} variant="subtle">
+                    <Button {...buttonProps} disabled={disabled} variant="subtle">
                         {sortByLabel}
                     </Button>
                 )}
@@ -77,6 +79,7 @@ export const ListSortByDropdown = ({
 };
 
 interface ListSortByDropdownControlledProps {
+    buttonProps?: ButtonProps;
     disabled?: boolean;
     filters?: Array<{ defaultOrder: SortOrder; name: string; value: string }>;
     itemType: LibraryItem;
@@ -86,6 +89,7 @@ interface ListSortByDropdownControlledProps {
 }
 
 export const ListSortByDropdownControlled = ({
+    buttonProps,
     disabled,
     filters,
     itemType,
@@ -109,7 +113,7 @@ export const ListSortByDropdownControlled = ({
                 {target ? (
                     target
                 ) : (
-                    <Button disabled={disabled} variant="subtle">
+                    <Button {...buttonProps} disabled={disabled} variant="subtle">
                         {sortByLabel}
                     </Button>
                 )}

@@ -33,6 +33,46 @@
     gap: 0;
 }
 
+.medium-detail-text-container {
+    gap: 0;
+}
+
+.medium-detail-title {
+    font-size: 15px;
+    line-height: 20px;
+    color: rgb(255 255 255);
+}
+
+.medium-detail-title.active {
+    color: var(--theme-colors-primary);
+}
+
+.medium-detail-secondary-line {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.medium-detail-secondary-line > :not(.medium-detail-explicit-badge),
+.medium-detail-secondary-line > :not(.medium-detail-explicit-badge) * {
+    font-size: 13.5px !important;
+    line-height: 18px;
+    color: rgb(179 179 179);
+}
+
+.medium-detail-explicit-badge {
+    display: grid;
+    flex: 0 0 16px;
+    place-items: center;
+    width: 16px;
+    height: 16px;
+    font-size: 10.5px;
+    line-height: 14px;
+    color: rgb(18 18 18);
+    background: rgb(179 179 179);
+    border-radius: 2px;
+}
+
 .title {
     display: -webkit-inline-box;
     width: 100%;
@@ -95,6 +135,20 @@ a.title {
     position: relative;
     width: 100%;
     height: 100%;
+}
+
+.medium-playlist-image-container {
+    display: grid;
+    place-items: center;
+}
+
+.medium-playlist-image-container > .medium-playlist-image {
+    width: 37px;
+    height: 37px;
+}
+
+.medium-playlist-image-container > .medium-playlist-image img {
+    border-radius: 4px;
 }
 
 .play-button-overlay {

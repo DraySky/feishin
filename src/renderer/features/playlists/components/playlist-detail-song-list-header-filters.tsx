@@ -1,18 +1,13 @@
 import { openContextModal } from '@mantine/modals';
-import { useQuery } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router';
 
+import actionBarStyles from './playlist-detail-action-bar.module.css';
+
 import i18n from '/@/i18n/i18n';
-import {
-    ALBUM_TABLE_COLUMNS,
-    PLAYLIST_SONG_TABLE_COLUMNS,
-    SONG_TABLE_COLUMNS,
-} from '/@/renderer/components/item-list/item-table-list/default-columns';
+import { PLAYLIST_SONG_TABLE_COLUMNS } from '/@/renderer/components/item-list/item-table-list/default-columns';
 import { useListContext } from '/@/renderer/context/list-context';
-import { ContextMenuController } from '/@/renderer/features/context-menu/context-menu-controller';
-import { playlistsQueries } from '/@/renderer/features/playlists/api/playlists-api';
 import { ClientSideSongFilters } from '/@/renderer/features/playlists/components/client-side-song-filters';
 import { usePlaylistSongListFilters } from '/@/renderer/features/playlists/hooks/use-playlist-song-list-filters';
 import { FilterButton } from '/@/renderer/features/shared/components/filter-button';
@@ -25,30 +20,20 @@ import { isFilterValueSet } from '/@/renderer/features/shared/components/list-fi
 import { ListRefreshButton } from '/@/renderer/features/shared/components/list-refresh-button';
 import { ListSortByDropdown } from '/@/renderer/features/shared/components/list-sort-by-dropdown';
 import { ListSortOrderToggleButton } from '/@/renderer/features/shared/components/list-sort-order-toggle-button';
-import { MoreButton } from '/@/renderer/features/shared/components/more-button';
 import { FILTER_KEYS } from '/@/renderer/features/shared/utils';
-import { useContainerQuery } from '/@/renderer/hooks';
-import {
-    PlaylistTarget,
-    useCurrentServerId,
-    usePlaylistTarget,
-    useSettingsStoreActions,
-} from '/@/renderer/store';
 import { ActionIcon } from '/@/shared/components/action-icon/action-icon';
 import { Button } from '/@/shared/components/button/button';
-import { Divider } from '/@/shared/components/divider/divider';
-import { Flex } from '/@/shared/components/flex/flex';
 import { Group } from '/@/shared/components/group/group';
 import { Icon } from '/@/shared/components/icon/icon';
 import { Modal } from '/@/shared/components/modal/modal';
-import { Tooltip } from '/@/shared/components/tooltip/tooltip';
 import { useDisclosure } from '/@/shared/hooks/use-disclosure';
-import { useLocalStorage } from '/@/shared/hooks/use-local-storage';
 import { LibraryItem, Song, SongListSort, SortOrder } from '/@/shared/types/domain-types';
 import { ItemListKey } from '/@/shared/types/types';
 
 interface PlaylistDetailSongListHeaderFiltersProps {
+    isQueryBuilderVisible?: boolean;
     isSmartPlaylist?: boolean;
+    onToggleQueryBuilder?: () => void;
 }
 
 const PlaylistSongListFiltersModal = () => {
@@ -115,54 +100,16 @@ const PlaylistSongListFiltersModal = () => {
 };
 
 export const PlaylistDetailSongListHeaderFilters = ({
+    isQueryBuilderVisible,
     isSmartPlaylist,
+    onToggleQueryBuilder,
 }: PlaylistDetailSongListHeaderFiltersProps) => {
     const { t } = useTranslation();
     const { listData, listKey: listKeyFromContext, mode, setMode } = useListContext();
-    const { playlistId } = useParams() as { playlistId: string };
-    const playlistTarget = usePlaylistTarget();
-    const { setPlaylistBehavior } = useSettingsStoreActions();
-    const serverId = useCurrentServerId();
+    const listKey = listKeyFromContext ?? ItemListKey.PLAYLIST_SONG;
 
-    const detailQuery = useQuery(playlistsQueries.detail({ query: { id: playlistId }, serverId }));
-
-    const handleMore = (event: React.MouseEvent<HTMLButtonElement>) => {
-        if (!detailQuery.data) return;
-
-        ContextMenuController.call({
-            cmd: {
-                items: [detailQuery.data],
-                type: LibraryItem.PLAYLIST,
-            },
-            event,
-        });
-    };
-
-    const listKey =
-        listKeyFromContext ??
-        (playlistTarget === PlaylistTarget.ALBUM
-            ? ItemListKey.PLAYLIST_ALBUM
-            : ItemListKey.PLAYLIST_SONG);
-    const isAlbumMode = listKey === ItemListKey.PLAYLIST_ALBUM;
-    const toggleChoice = isAlbumMode
-        ? t('entity.album', { count: 2 })
-        : t('entity.track', { count: 2 });
-
-    const handleToggleDisplayMode = useCallback(() => {
-        setPlaylistBehavior(
-            playlistTarget === PlaylistTarget.ALBUM ? PlaylistTarget.TRACK : PlaylistTarget.ALBUM,
-        );
-    }, [playlistTarget, setPlaylistBehavior]);
-
-    const { ref: containerRef, ...breakpoints } = useContainerQuery();
-
-    const isViewEditMode = !isSmartPlaylist && (breakpoints.isSm || isAlbumMode);
+    const isViewEditMode = !isSmartPlaylist;
     const isEditMode = mode === 'edit';
-
-    const [collapsed, setCollapsed] = useLocalStorage<boolean>({
-        defaultValue: false,
-        key: 'playlist-header-collapsed',
-    });
 
     const tracks = useMemo(() => {
         if (!listData?.length) {
@@ -173,75 +120,51 @@ export const PlaylistDetailSongListHeaderFilters = ({
     }, [listData]);
 
     return (
-        <Flex justify="space-between" ref={containerRef}>
-            <Group gap="sm" w="100%">
+        <Group gap="xs" justify="flex-end" wrap="wrap">
+            <ListSortByDropdown
+                buttonProps={{ className: actionBarStyles.textAction }}
+                defaultSortByValue={SongListSort.ID}
+                disabled={isEditMode}
+                itemType={LibraryItem.PLAYLIST_SONG}
+                listKey={ItemListKey.PLAYLIST_SONG}
+            />
+            <ListSortOrderToggleButton
+                defaultSortOrder={SortOrder.ASC}
+                disabled={isEditMode}
+                listKey={ItemListKey.PLAYLIST_SONG}
+            />
+            <PlaylistSongListFiltersModal />
+            <ListRefreshButton disabled={isEditMode} listKey={listKey} />
+            {isViewEditMode && <SaveAndReplaceButton mode={mode} songIds={tracks} />}
+            {isViewEditMode && (
                 <Button
-                    disabled={isEditMode}
-                    leftSection={<Icon icon="arrowLeftRight" />}
-                    onClick={handleToggleDisplayMode}
-                    variant="subtle"
+                    className={actionBarStyles.textAction}
+                    onClick={() => setMode?.(mode === 'edit' ? 'view' : 'edit')}
+                    uppercase
+                    variant={mode === 'edit' ? 'state-error' : 'subtle'}
                 >
-                    {toggleChoice}
+                    {mode === 'edit' ? t('common.cancel') : t('common.edit')}
                 </Button>
-                <Divider orientation="vertical" />
-                <ListSortByDropdown
-                    defaultSortByValue={SongListSort.ID}
-                    disabled={isEditMode}
-                    itemType={LibraryItem.PLAYLIST_SONG}
-                    listKey={ItemListKey.PLAYLIST_SONG}
+            )}
+            {isSmartPlaylist && onToggleQueryBuilder && (
+                <ActionIcon
+                    aria-pressed={isQueryBuilderVisible}
+                    icon="queryBuilder"
+                    iconProps={{
+                        color: isQueryBuilderVisible ? 'primary' : undefined,
+                    }}
+                    onClick={onToggleQueryBuilder}
+                    tooltip={{ label: t('action.toggleSmartPlaylistEditor') }}
+                    variant="subtle"
                 />
-                <Divider orientation="vertical" />
-                <ListSortOrderToggleButton
-                    defaultSortOrder={SortOrder.ASC}
-                    disabled={isEditMode}
-                    listKey={ItemListKey.PLAYLIST_SONG}
-                />
-                <Divider orientation="vertical" />
-                <PlaylistSongListFiltersModal />
-                <ListRefreshButton disabled={isEditMode} listKey={listKey} />
-                <MoreButton onClick={handleMore} />
-            </Group>
-            <Group gap="sm" wrap="nowrap">
-                {isViewEditMode && <SaveAndReplaceButton mode={mode} songIds={tracks} />}
-                {isViewEditMode && (
-                    <Button
-                        onClick={() => setMode?.(mode === 'edit' ? 'view' : 'edit')}
-                        uppercase
-                        variant={mode === 'edit' ? 'state-error' : 'subtle'}
-                    >
-                        {mode === 'edit' ? t('common.cancel') : t('common.edit')}
-                    </Button>
-                )}
-                <Tooltip label={t(`common.${collapsed ? 'expand' : 'collapse'}`, {})}>
-                    <ActionIcon
-                        icon={collapsed ? 'arrowDownS' : 'arrowUpS'}
-                        iconProps={{ size: 'xl' }}
-                        onClick={() => setCollapsed((prev) => !prev)}
-                        variant="subtle"
-                    />
-                </Tooltip>
-                <ListDisplayTypeToggleButton enableDetail={isAlbumMode} listKey={listKey} />
-                {isAlbumMode ? (
-                    <ListConfigMenu
-                        detailConfig={{
-                            optionsConfig: {
-                                autoFitColumns: { hidden: true },
-                            },
-                            tableColumnsData: SONG_TABLE_COLUMNS,
-                            tableKey: 'detail',
-                        }}
-                        listKey={listKey}
-                        tableColumnsData={ALBUM_TABLE_COLUMNS}
-                    />
-                ) : (
-                    <ListConfigMenu
-                        displayTypes={SONG_DISPLAY_TYPES}
-                        listKey={listKey}
-                        tableColumnsData={PLAYLIST_SONG_TABLE_COLUMNS}
-                    />
-                )}
-            </Group>
-        </Flex>
+            )}
+            <ListDisplayTypeToggleButton listKey={listKey} />
+            <ListConfigMenu
+                displayTypes={SONG_DISPLAY_TYPES}
+                listKey={listKey}
+                tableColumnsData={PLAYLIST_SONG_TABLE_COLUMNS}
+            />
+        </Group>
     );
 };
 
