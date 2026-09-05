@@ -1,5 +1,9 @@
+import packageJson from '../../package.json';
+
 export const disableAutoUpdates = () => {
-    return process.env['DISABLE_AUTO_UPDATES'];
+    return (
+        Boolean(process.env['DISABLE_AUTO_UPDATES']) || packageJson.productName === 'Feishin Custom'
+    );
 };
 
 export const isMacOS = () => {

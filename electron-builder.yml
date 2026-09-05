@@ -1,5 +1,5 @@
-appId: org.jeffvli.feishin
-productName: Feishin
+appId: com.draysky.feishin-custom
+productName: Feishin Custom
 artifactName: ${productName}-${version}-${os}-${arch}.${ext}
 electronVersion: 43.4.1
 directories:
@@ -67,9 +67,3 @@ toolsets:
 
 npmRebuild: false
 afterAllArtifactBuild: scripts/after-all-artifact-build.mjs
-publish:
-    provider: github
-    owner: jeffvli
-    repo: feishin
-    channel: latest
-    releaseType: draft
