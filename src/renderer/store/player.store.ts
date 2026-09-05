@@ -36,7 +36,12 @@ export type QueuePlaybackContext =
     | { playlistId: string; serverId: string; source: 'playlistDetail' };
 
 interface Actions {
-    addToQueueByType: (items: Song[], playType: Play, playSongId?: string) => void;
+    addToQueueByType: (
+        items: Song[],
+        playType: Play,
+        playSongId?: string,
+        playbackContext?: QueuePlaybackContext,
+    ) => void;
     addToQueueByUniqueId: (
         items: Song[],
         uniqueId: string,
@@ -350,6 +355,31 @@ function generateShuffledIndexes(length: number): number[] {
     return shuffleInPlace(indexes);
 }
 
+function getLinkedQueuePlaybackContext(
+    playbackContext: QueuePlaybackContext,
+    currentSong: QueueSong | undefined,
+): QueuePlaybackContext {
+    if (!currentSong || !playbackContext || playbackContext.serverId !== currentSong._serverId) {
+        return null;
+    }
+
+    if (
+        playbackContext.source === 'albumDetail' &&
+        playbackContext.albumId === currentSong._contextAlbumId
+    ) {
+        return playbackContext;
+    }
+
+    if (
+        playbackContext.source === 'playlistDetail' &&
+        playbackContext.playlistId === currentSong._contextPlaylistId
+    ) {
+        return playbackContext;
+    }
+
+    return null;
+}
+
 function invalidateQueuePlaybackContext(state: State): void {
     state.queuePlaybackContext = null;
 }
@@ -393,7 +423,7 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
     persist(
         subscribeWithSelector(
             immer((set, get) => ({
-                addToQueueByType: (items, playType, playSongId) => {
+                addToQueueByType: (items, playType, playSongId, playbackContext) => {
                     const newItems = items.map(toQueueSong);
                     const newUniqueIds = newItems.map((item) => item._uniqueId);
 
@@ -405,7 +435,6 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                     switch (playType) {
                         case Play.LAST: {
                             set((state) => {
-                                invalidateQueuePlaybackContext(state);
                                 newItems.forEach((item) => {
                                     state.queue.songs[item._uniqueId] = item;
                                 });
@@ -431,7 +460,6 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                         }
                         case Play.LAST_SHUFFLE: {
                             set((state) => {
-                                invalidateQueuePlaybackContext(state);
                                 newItems.forEach((item) => {
                                     state.queue.songs[item._uniqueId] = item;
                                 });
@@ -460,7 +488,6 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                         }
                         case Play.NEXT: {
                             set((state) => {
-                                invalidateQueuePlaybackContext(state);
                                 const currentShuffledIndex = state.player.index;
                                 newItems.forEach((item) => {
                                     state.queue.songs[item._uniqueId] = item;
@@ -504,7 +531,6 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                         }
                         case Play.NEXT_SHUFFLE: {
                             set((state) => {
-                                invalidateQueuePlaybackContext(state);
                                 const currentShuffledIndex = state.player.index;
                                 newItems.forEach((item) => {
                                     state.queue.songs[item._uniqueId] = item;
@@ -552,7 +578,7 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                             clearActiveRadio();
 
                             set((state) => {
-                                invalidateQueuePlaybackContext(state);
+                                state.queuePlaybackContext = playbackContext ?? null;
                                 newItems.forEach((item) => {
                                     state.queue.songs[item._uniqueId] = item;
                                 });
@@ -609,7 +635,7 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                             clearActiveRadio();
 
                             set((state) => {
-                                invalidateQueuePlaybackContext(state);
+                                state.queuePlaybackContext = playbackContext ?? null;
                                 newItems.forEach((item) => {
                                     state.queue.songs[item._uniqueId] = item;
                                 });
@@ -643,7 +669,6 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                         : undefined;
 
                     set((state) => {
-                        invalidateQueuePlaybackContext(state);
                         // Add new songs to songs object
                         newItems.forEach((item) => {
                             state.queue.songs[item._uniqueId] = item;
@@ -1410,7 +1435,6 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                     const itemUniqueIds = items.map((item) => item._uniqueId);
 
                     set((state) => {
-                        invalidateQueuePlaybackContext(state);
                         const existingIds = new Set(Object.keys(state.queue.songs));
 
                         // Add new songs to songs object (avoiding duplicates)
@@ -1442,7 +1466,6 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                 },
                 moveSelectedToBottom: (items: QueueSong[]) => {
                     set((state) => {
-                        invalidateQueuePlaybackContext(state);
                         const uniqueIds = items.map((item) => item._uniqueId);
 
                         // Add new songs to songs object
@@ -1463,7 +1486,6 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                 },
                 moveSelectedToNext: (items: QueueSong[]) => {
                     set((state) => {
-                        invalidateQueuePlaybackContext(state);
                         const uniqueIds = items.map((item) => item._uniqueId);
 
                         // Add new songs to songs object
@@ -1498,7 +1520,6 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                 },
                 moveSelectedToTop: (items: QueueSong[]) => {
                     set((state) => {
-                        invalidateQueuePlaybackContext(state);
                         const uniqueIds = items.map((item) => item._uniqueId);
 
                         // Add new songs to songs object
@@ -2299,6 +2320,7 @@ export const updateQueueSong = (songId: string, updatedSong: Song) => {
                 const uniqueId = song._uniqueId;
                 state.queue.songs[song._uniqueId] = {
                     ...updatedSong,
+                    _contextAlbumId: song._contextAlbumId,
                     _contextPlaylistId: song._contextPlaylistId,
                     _uniqueId: uniqueId,
                 };
@@ -2308,11 +2330,24 @@ export const updateQueueSong = (songId: string, updatedSong: Song) => {
 };
 
 export const useCurrentPlaylistContextId = () => {
-    return usePlayerStoreBase((state) => state.getCurrentSong()?._contextPlaylistId ?? null);
+    return usePlayerStoreBase((state) => {
+        const currentSong = state.getCurrentSong();
+        const linkedContext = getLinkedQueuePlaybackContext(
+            state.queuePlaybackContext,
+            currentSong,
+        );
+
+        if (linkedContext?.source === 'playlistDetail') return linkedContext.playlistId;
+        if (!state.queuePlaybackContext) return currentSong?._contextPlaylistId ?? null;
+
+        return null;
+    });
 };
 
 export const useQueuePlaybackContext = () => {
-    return usePlayerStoreBase((state) => state.queuePlaybackContext);
+    return usePlayerStoreBase((state) =>
+        getLinkedQueuePlaybackContext(state.queuePlaybackContext, state.getCurrentSong()),
+    );
 };
 
 export const usePlayerMuted = () => {

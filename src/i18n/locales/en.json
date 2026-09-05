@@ -18,6 +18,7 @@
         "downloadStarted": "Started download of {{count}} items",
         "editPlaylist": "Edit $t(entity.playlist, {\"count\": 1})",
         "goToPage": "Go to page",
+        "hidePlaylist": "Hide playlist",
         "moveToNext": "Move to next",
         "moveToBottom": "Move to bottom",
         "moveToTop": "Move to top",
@@ -26,6 +27,7 @@
         "holdToMoveToTop": "Hold to move to top",
         "holdToMoveToBottom": "Hold to move to bottom",
         "moveItems": "Move items",
+        "pinPlaylist": "Pin playlist",
         "shuffle": "Shuffle",
         "shuffleAll": "Shuffle all",
         "shuffleSelected": "Shuffle selected",
@@ -34,7 +36,10 @@
         "removeFromPlaylist": "Remove from $t(entity.playlist, {\"count\": 1})",
         "removeFromQueue": "Remove from queue",
         "setRating": "Set rating",
+        "sortPlaylists": "Sort playlists",
         "toggleSmartPlaylistEditor": "Toggle $t(entity.smartPlaylist) editor",
+        "unhidePlaylist": "Unhide playlist",
+        "unpinPlaylist": "Unpin playlist",
         "viewPlaylists": "View $t(entity.playlist, {\"count\": 2})",
         "viewMore": "View more",
         "openApplicationDirectory": "Open application directory",
@@ -272,6 +277,7 @@
         "dateAdded": "Date added",
         "disc": "Disc",
         "duration": "Duration",
+        "default": "Default",
         "favorited": "Favorited",
         "fromYear": "From year",
         "genre": "$t(entity.genre, {\"count\": 1})",
@@ -367,6 +373,10 @@
         "queueChangeConfirmation": {
             "title": "Discard the current queue?",
             "description": "This will remove all items from the current queue."
+        },
+        "addToQueue": {
+            "success_one": "Added to queue",
+            "success_other": "Added {{count}} songs to queue"
         },
         "addToPlaylist": {
             "create": "Create $t(entity.playlist, {\"count\": 1}) {{playlist}}",

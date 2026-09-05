@@ -17,11 +17,16 @@ import { ContextMenu } from '/@/shared/components/context-menu/context-menu';
 import { LibraryItem, Song } from '/@/shared/types/domain-types';
 
 interface PlaylistSongContextMenuProps {
+    contextPlaylistId?: string;
     items: Song[];
     type: LibraryItem.PLAYLIST_SONG;
 }
 
-export const PlaylistSongContextMenu = ({ items, type }: PlaylistSongContextMenuProps) => {
+export const PlaylistSongContextMenu = ({
+    contextPlaylistId,
+    items,
+    type,
+}: PlaylistSongContextMenuProps) => {
     const { ids } = useMemo(() => {
         const ids = items.map((item) => item.id);
         return { ids };
@@ -31,7 +36,12 @@ export const PlaylistSongContextMenu = ({ items, type }: PlaylistSongContextMenu
         <ContextMenu.Content
             bottomStickyContent={<ContextMenuPreview items={items} itemType={type} />}
         >
-            <PlayAction ids={ids} itemType={type} songs={items} />
+            <PlayAction
+                contextPlaylistId={contextPlaylistId}
+                ids={ids}
+                itemType={type}
+                songs={items}
+            />
             <PlayTrackRadioAction disabled={items.length > 1} song={items[0]} />
             <ContextMenu.Divider />
             <RemoveFromPlaylistAction items={items} />

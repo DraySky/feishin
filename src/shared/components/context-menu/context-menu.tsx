@@ -17,7 +17,7 @@ import {
 import styles from './context-menu.module.css';
 
 import { animationVariants } from '/@/shared/components/animations/animation-variants';
-import { AppIcon, Icon } from '/@/shared/components/icon/icon';
+import { AppIcon, Icon, IconColor } from '/@/shared/components/icon/icon';
 import { ScrollArea } from '/@/shared/components/scroll-area/scroll-area';
 
 interface ContextMenuContext {
@@ -50,6 +50,7 @@ interface ItemProps {
     disabled?: boolean;
     isSelected?: boolean;
     leftIcon?: keyof typeof AppIcon;
+    leftIconFill?: IconColor;
     onSelect?: (event: Event) => void;
     rightIcon?: keyof typeof AppIcon;
 }
@@ -120,7 +121,16 @@ function Divider(props: DividerProps) {
 }
 
 function Item(props: ItemProps) {
-    const { children, className, disabled, isSelected, leftIcon, onSelect, rightIcon } = props;
+    const {
+        children,
+        className,
+        disabled,
+        isSelected,
+        leftIcon,
+        leftIconFill,
+        onSelect,
+        rightIcon,
+    } = props;
 
     return (
         <RadixContextMenu.Item
@@ -133,7 +143,7 @@ function Item(props: ItemProps) {
             disabled={disabled}
             onSelect={onSelect}
         >
-            {leftIcon && <Icon className={styles.leftIcon} icon={leftIcon} />}
+            {leftIcon && <Icon className={styles.leftIcon} fill={leftIconFill} icon={leftIcon} />}
             {children}
             {rightIcon && <Icon className={styles.rightIcon} icon={rightIcon} />}
         </RadixContextMenu.Item>

@@ -142,9 +142,20 @@ export const RowPlayControlCell = (
                 className={clsx(styles.fullSizeContent, {
                     [styles.activeIndexContent]: isActivePaused,
                 })}
+                containerClassName={isActivePlaying ? styles.activePlayingCell : undefined}
             >
-                <Flex className={styles.indexContent} justify="center" w="100%">
-                    <span className="hide-on-hover">{getIndexDisplay(false)}</span>
+                <Flex
+                    className={clsx(styles.indexContent, {
+                        [styles.activePlayingControls]: isActivePlaying,
+                    })}
+                    justify="center"
+                    w="100%"
+                >
+                    <span
+                        className={isActivePlaying ? styles.activePlayingContent : 'hide-on-hover'}
+                    >
+                        {getIndexDisplay(false)}
+                    </span>
                     <ActionIcon
                         aria-label={t(isActivePlaying ? 'player.pause' : 'player.play')}
                         className="hover-only"

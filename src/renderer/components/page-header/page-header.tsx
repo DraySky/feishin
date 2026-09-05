@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { useInView } from 'motion/react';
+import { useInView, UseInViewOptions } from 'motion/react';
 import { AnimatePresence, motion, Variants } from 'motion/react';
 import { CSSProperties, memo, ReactNode, RefObject, useEffect, useRef } from 'react';
 
@@ -17,13 +17,22 @@ export interface PageHeaderProps extends Omit<
 > {
     animated?: boolean;
     backgroundColor?: string;
+    backgroundOpacity?: number;
     children?: ReactNode;
+    fadeOnScroll?: boolean;
     height?: string;
     isHidden?: boolean;
     position?: string;
+    revealBefore?: number;
     scrollContainerRef?: RefObject<HTMLDivElement | null>;
     target?: RefObject<HTMLElement | null>;
 }
+
+export const PAGE_HEADER_HEIGHT = 65;
+
+export const getPageHeaderBottom = (windowBarStyle: Platform) =>
+    PAGE_HEADER_HEIGHT +
+    (windowBarStyle === Platform.WINDOWS || windowBarStyle === Platform.MACOS ? 30 : 0);
 
 const variants: Variants = {
     animate: {
@@ -40,10 +49,13 @@ const variants: Variants = {
 const BasePageHeader = ({
     animated,
     backgroundColor,
+    backgroundOpacity,
     children,
+    fadeOnScroll,
     height,
     isHidden,
     position,
+    revealBefore,
     scrollContainerRef,
     target,
     ...props
@@ -52,9 +64,16 @@ const BasePageHeader = ({
     const padRight = useShouldPadTitlebar();
     const { windowBarStyle } = useWindowSettings();
 
-    const isInView = useInView({
-        current: target?.current || null,
-    });
+    const targetMargin: UseInViewOptions['margin'] =
+        revealBefore === undefined
+            ? undefined
+            : `-${getPageHeaderBottom(windowBarStyle) + revealBefore}px 0px 0px 0px`;
+    const isInView = useInView(
+        {
+            current: target?.current || null,
+        },
+        { margin: targetMargin },
+    );
 
     useEffect(() => {
         const headerElement = ref.current as HTMLElement | null;
@@ -100,7 +119,7 @@ const BasePageHeader = ({
     return (
         <>
             <Flex
-                className={styles.container}
+                className={clsx(styles.container, fadeOnScroll && styles.fadeOnScroll)}
                 data-visible="false"
                 ref={ref}
                 style={{ height, position: position as CSSProperties['position'] }}
@@ -126,7 +145,11 @@ const BasePageHeader = ({
                     </AnimatePresence>
                 </div>
                 {backgroundColor && (
-                    <LibraryBackgroundOverlay backgroundColor={backgroundColor} headerRef={ref} />
+                    <LibraryBackgroundOverlay
+                        backgroundColor={backgroundColor}
+                        headerRef={ref}
+                        opacity={backgroundOpacity}
+                    />
                 )}
             </Flex>
         </>

@@ -45,6 +45,21 @@
     white-space: nowrap;
 }
 
+.name-group {
+    display: flex;
+    gap: var(--theme-spacing-xs);
+    align-items: center;
+    min-width: 0;
+}
+
+.name-group-compact {
+    flex: 1;
+}
+
+.pin-indicator {
+    flex-shrink: 0;
+}
+
 .controls {
     position: absolute;
     top: 50%;
@@ -137,6 +152,7 @@
 }
 
 .name {
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

@@ -44,6 +44,25 @@
     height: 100%;
 }
 
+.active-playing-controls {
+    display: grid;
+}
+
+.active-playing-controls > * {
+    grid-area: 1 / 1;
+    place-self: center;
+}
+
+.active-playing-cell:hover .active-playing-content,
+.active-playing-cell[data-row-hovered='true'] .active-playing-content {
+    visibility: hidden;
+}
+
+.active-playing-cell:hover .playing-equalizer > span,
+.active-playing-cell[data-row-hovered='true'] .playing-equalizer > span {
+    animation-play-state: paused;
+}
+
 .full-size-content.active-index-content {
     color: var(--theme-colors-primary);
 }

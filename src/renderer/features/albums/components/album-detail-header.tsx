@@ -264,6 +264,7 @@ const AlbumDetailHeaderBase = (
     return (
         <Stack gap={0} ref={ref}>
             <LibraryHeader
+                condensedHero
                 item={{
                     children: headerItem,
                     explicitStatus: detailQuery?.data?.explicitStatus ?? null,

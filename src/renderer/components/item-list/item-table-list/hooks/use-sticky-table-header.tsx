@@ -1,12 +1,13 @@
 import { useInView } from 'motion/react';
 import { RefObject, useEffect, useMemo, useRef } from 'react';
 
+import { getPageHeaderBottom } from '/@/renderer/components/page-header/page-header';
 import { useWindowSettings } from '/@/renderer/store/settings.store';
-import { Platform } from '/@/shared/types/types';
 
 export const useStickyTableHeader = ({
     containerRef,
     enabled,
+    headerHeight,
     headerRef,
     mainGridRef,
     pinnedLeftColumnRef,
@@ -15,6 +16,7 @@ export const useStickyTableHeader = ({
 }: {
     containerRef: RefObject<HTMLDivElement | null>;
     enabled: boolean;
+    headerHeight: number;
     headerRef: RefObject<HTMLDivElement | null>;
     mainGridRef?: RefObject<HTMLDivElement | null>;
     pinnedLeftColumnRef?: RefObject<HTMLDivElement | null>;
@@ -29,26 +31,29 @@ export const useStickyTableHeader = ({
         stickyHeader: false,
     });
 
-    const topMargin =
-        windowBarStyle === Platform.WINDOWS || windowBarStyle === Platform.MACOS
-            ? '-130px'
-            : '-100px';
+    const stickyTop = useMemo(() => getPageHeaderBottom(windowBarStyle), [windowBarStyle]);
+    const topMargin = -(stickyTop + headerHeight);
 
     const isTableHeaderInView = useInView(headerRef, {
-        margin: `${topMargin} 0px 0px 0px`,
+        margin: `${topMargin}px 0px 0px 0px`,
     });
 
     const isTableInView = useInView(containerRef, {
-        margin: `${topMargin} 0px 0px 0px`,
+        margin: `${topMargin}px 0px 0px 0px`,
     });
 
     const shouldShowStickyHeader = useMemo(() => {
         return enabled && !isTableHeaderInView && isTableInView;
     }, [enabled, isTableHeaderInView, isTableInView]);
 
-    const stickyTop = useMemo(() => {
-        return windowBarStyle === Platform.WINDOWS || windowBarStyle === Platform.MACOS ? 95 : 65;
-    }, [windowBarStyle]);
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        container.toggleAttribute('data-sticky-header-visible', shouldShowStickyHeader);
+
+        return () => container.removeAttribute('data-sticky-header-visible');
+    }, [containerRef, shouldShowStickyHeader]);
 
     // Sync scroll between sticky header and main grid/pinned columns
     useEffect(() => {

@@ -16,9 +16,15 @@ import {
     getSongsByFolder,
 } from '/@/renderer/features/player/utils';
 import { playlistsQueries } from '/@/renderer/features/playlists/api/playlists-api';
+import {
+    getPlaylistLastPlayedKey,
+    type PlaylistLastPlayedMap,
+} from '/@/renderer/features/playlists/utils/playlist-sidebar-organization';
 import { songsQueries } from '/@/renderer/features/songs/api/songs-api';
 import {
     AddToQueueType,
+    type QueuePlaybackContext,
+    useCurrentServerId,
     usePlayerActions,
     useSettingsStore,
     useSettingsStoreActions,
@@ -55,6 +61,7 @@ export interface PlayerContext {
                 serverId: string;
                 shuffle: boolean;
             };
+            suppressQueueInsertToast?: boolean;
         },
     ) => void;
     addToQueueByFetch: (
@@ -69,6 +76,7 @@ export interface PlayerContext {
                 serverId: string;
                 shuffle: boolean;
             };
+            suppressQueueInsertToast?: boolean;
         },
     ) => void;
     addToQueueByListQuery: (
@@ -169,29 +177,72 @@ const isReplaceQueueType = (type: AddToQueueType): boolean => {
     return type === Play.NOW || type === Play.SHUFFLE;
 };
 
-// HashRouter puts the route in location.hash, not pathname.
-const inferPlaylistContextFromUrl = (): null | string => {
-    const route = window.location.hash.replace(/^#/, '');
-    const match = route.match(/^\/playlists\/([^/]+)/);
-    return match ? match[1] : null;
+const isQueueInsertionType = (type: AddToQueueType): boolean => {
+    if (typeof type === 'object') return type.edge !== null;
+    return (
+        type === Play.NEXT ||
+        type === Play.NEXT_SHUFFLE ||
+        type === Play.LAST ||
+        type === Play.LAST_SHUFFLE
+    );
 };
 
-// Stamps each song with the playlist it was queued from, so the sidebar highlight
-// can be derived from whichever song is currently playing (see useCurrentPlaylistContextId).
-const tagPlaylistContext = (songs: Song[], contextPlaylistId: string): Song[] =>
-    songs.map((song) => ({ ...song, _contextPlaylistId: contextPlaylistId }));
+type SongWithCollectionContext = Pick<QueueSong, '_contextAlbumId' | '_contextPlaylistId'> & Song;
+
+const setCollectionContext = (songs: Song[], context: QueuePlaybackContext): Song[] =>
+    songs.map((song) => {
+        const contextualSong = { ...song } as SongWithCollectionContext;
+        delete contextualSong._contextAlbumId;
+        delete contextualSong._contextPlaylistId;
+
+        if (context?.source === 'albumDetail') {
+            contextualSong._contextAlbumId = context.albumId;
+        } else if (context?.source === 'playlistDetail') {
+            contextualSong._contextPlaylistId = context.playlistId;
+        }
+
+        return contextualSong;
+    });
 
 export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
     const { t } = useTranslation();
     const queryClient = useQueryClient();
     const storeActions = usePlayerActions();
     const settingsActions = useSettingsStoreActions();
+    const currentServerId = useCurrentServerId();
     const timeoutIds = useRef<null | Record<string, ReturnType<typeof setTimeout>>>({});
 
     const [doNotShowAgain, setDoNotShowAgain] = useLocalStorage({
         defaultValue: false,
         key: 'large_fetch_confirmation',
     });
+    const [, setPlaylistLastPlayed] = useLocalStorage<PlaylistLastPlayedMap>({
+        defaultValue: {},
+        key: getPlaylistLastPlayedKey(currentServerId),
+    });
+
+    const notifyQueueInsertion = useCallback(
+        (type: AddToQueueType, count: number, suppress = false) => {
+            if (count === 0 || suppress || !isQueueInsertionType(type)) return;
+
+            toast.success({
+                message: t('form.addToQueue.success', { count }),
+            });
+        },
+        [t],
+    );
+
+    const recordPlaylistStarted = useCallback(
+        (serverId: string | undefined, playlistId: string) => {
+            if (!serverId || serverId !== currentServerId) return;
+
+            setPlaylistLastPlayed((current) => ({
+                ...current,
+                [playlistId]: Date.now(),
+            }));
+        },
+        [currentServerId, setPlaylistLastPlayed],
+    );
 
     const confirmQueueChange = useCallback(
         (onConfirm: () => void) => {
@@ -286,16 +337,22 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
                     serverId: string;
                     shuffle: boolean;
                 };
+                suppressQueueInsertToast?: boolean;
             },
         ) => {
             const filters = useSettingsStore.getState().playback.filters;
             let filteredData = filterSongsByPlayerFilters(data, filters);
-            const resolvedContextId =
-                contextPlaylistId ??
-                (isReplaceQueueType(type) ? inferPlaylistContextFromUrl() : null);
-            if (resolvedContextId) {
-                filteredData = tagPlaylistContext(filteredData, resolvedContextId);
-            }
+            const resolvedContextId = contextPlaylistId ?? null;
+            const contextServerId = options?.playlistDetail?.serverId ?? filteredData[0]?._serverId;
+            const playbackContext: QueuePlaybackContext =
+                resolvedContextId && contextServerId
+                    ? {
+                          playlistId: resolvedContextId,
+                          serverId: contextServerId,
+                          source: 'playlistDetail',
+                      }
+                    : null;
+            filteredData = setCollectionContext(filteredData, playbackContext);
 
             const addToQueue = () => {
                 if (options?.playlistDetail) {
@@ -328,8 +385,19 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
                         type,
                     });
 
-                    storeActions.addToQueueByType(filteredData, type as Play, playSongId);
+                    storeActions.addToQueueByType(
+                        filteredData,
+                        type as Play,
+                        playSongId,
+                        isReplaceQueueType(type) ? playbackContext : undefined,
+                    );
                 }
+
+                if (filteredData.length > 0 && resolvedContextId && isReplaceQueueType(type)) {
+                    recordPlaylistStarted(contextServerId, resolvedContextId);
+                }
+
+                notifyQueueInsertion(type, filteredData.length, options?.suppressQueueInsertToast);
             };
 
             if (isReplaceQueueType(type)) {
@@ -338,7 +406,7 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
                 addToQueue();
             }
         },
-        [confirmQueueChange, storeActions],
+        [confirmQueueChange, notifyQueueInsertion, recordPlaylistStarted, storeActions],
     );
 
     const addToQueueByFetch = useCallback(
@@ -354,6 +422,7 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
                     serverId: string;
                     shuffle: boolean;
                 };
+                suppressQueueInsertToast?: boolean;
             },
         ) => {
             let toastId: null | string = null;
@@ -414,19 +483,21 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
                 const filters = useSettingsStore.getState().playback.filters;
                 let filteredSongs = filterSongsByPlayerFilters(sortedSongs, filters);
 
-                // Songs from multiple playlists are merged together, so there is no single
-                // playlist to attribute them to: skip tagging (and URL inference) entirely.
-                const isMultiPlaylist = itemType === LibraryItem.PLAYLIST && id.length > 1;
-                const explicitId =
-                    itemType === LibraryItem.PLAYLIST && id.length === 1 ? id[0] : null;
-                const resolvedContextId =
-                    explicitId ??
-                    (!isMultiPlaylist && isReplaceQueueType(type)
-                        ? inferPlaylistContextFromUrl()
-                        : null);
-                if (resolvedContextId) {
-                    filteredSongs = tagPlaylistContext(filteredSongs, resolvedContextId);
-                }
+                const playbackContext: QueuePlaybackContext =
+                    id.length === 1 && itemType === LibraryItem.PLAYLIST
+                        ? {
+                              playlistId: id[0],
+                              serverId,
+                              source: 'playlistDetail',
+                          }
+                        : id.length === 1 && itemType === LibraryItem.ALBUM
+                          ? {
+                                albumId: id[0],
+                                serverId,
+                                source: 'albumDetail',
+                            }
+                          : null;
+                filteredSongs = setCollectionContext(filteredSongs, playbackContext);
 
                 const addToQueue = () => {
                     if (options?.albumDetail) {
@@ -438,8 +509,28 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
                         const edge = type.edge === 'top' ? 'top' : 'bottom';
                         storeActions.addToQueueByUniqueId(filteredSongs, type.uniqueId, edge);
                     } else {
-                        storeActions.addToQueueByType(filteredSongs, type as Play);
+                        storeActions.addToQueueByType(
+                            filteredSongs,
+                            type as Play,
+                            undefined,
+                            isReplaceQueueType(type) ? playbackContext : undefined,
+                        );
                     }
+
+                    if (
+                        filteredSongs.length > 0 &&
+                        itemType === LibraryItem.PLAYLIST &&
+                        id.length === 1 &&
+                        isReplaceQueueType(type)
+                    ) {
+                        recordPlaylistStarted(serverId, id[0]);
+                    }
+
+                    notifyQueueInsertion(
+                        type,
+                        filteredSongs.length,
+                        options?.suppressQueueInsertToast,
+                    );
                 };
 
                 if (options?.albumDetail || isReplaceQueueType(type)) {
@@ -464,7 +555,14 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
                 });
             }
         },
-        [confirmQueueChange, queryClient, storeActions, t],
+        [
+            confirmQueueChange,
+            notifyQueueInsertion,
+            queryClient,
+            recordPlaylistStarted,
+            storeActions,
+            t,
+        ],
     );
 
     const addToQueueByListQuery = useCallback(

@@ -4,7 +4,11 @@ import { useNavigate } from 'react-router';
 import { getTitlePath } from '/@/renderer/components/item-list/helpers/get-title-path';
 import { ItemListStateItemWithRequiredProperties } from '/@/renderer/components/item-list/helpers/item-list-state';
 import { DefaultItemControlProps, ItemControls } from '/@/renderer/components/item-list/types';
-import { ContextMenuController } from '/@/renderer/features/context-menu/context-menu-controller';
+import { useListContext } from '/@/renderer/context/list-context';
+import {
+    type ContextMenuCommand,
+    ContextMenuController,
+} from '/@/renderer/features/context-menu/context-menu-controller';
 import { usePlayer } from '/@/renderer/features/player/context/player-context';
 import { useSetFavorite } from '/@/renderer/features/shared/hooks/use-set-favorite';
 import { useSetRating } from '/@/renderer/features/shared/hooks/use-set-rating';
@@ -33,9 +37,23 @@ const itemTypeMapping = {
     [LibraryItem.QUEUE_SONG]: LibraryItem.SONG,
 };
 
+const getContextMenuCommand = (
+    items: any[],
+    itemType: LibraryItem,
+    playlistContextId?: string,
+): ContextMenuCommand =>
+    ({
+        ...(itemType === LibraryItem.PLAYLIST_SONG && playlistContextId
+            ? { contextPlaylistId: playlistContextId }
+            : {}),
+        items,
+        type: itemType,
+    }) as ContextMenuCommand;
+
 export const useDefaultItemListControls = (args?: UseDefaultItemListControlsArgs) => {
     const player = usePlayer();
     const navigate = useNavigate();
+    const { id: playlistContextId } = useListContext();
     const navigateRef = useRef(navigate);
     const setFavorite = useSetFavorite();
     const setRating = useSetRating();
@@ -273,7 +291,12 @@ export const useDefaultItemListControls = (args?: UseDefaultItemListControlsArgs
                         return;
                     }
 
-                    playerRef.current.addToQueueByData(songsToAdd, playType, item.id);
+                    playerRef.current.addToQueueByData(
+                        songsToAdd,
+                        playType,
+                        item.id,
+                        itemType === LibraryItem.PLAYLIST_SONG ? playlistContextId : undefined,
+                    );
                     return;
                 }
 
@@ -342,7 +365,11 @@ export const useDefaultItemListControls = (args?: UseDefaultItemListControlsArgs
                 // If no internalState, call ContextMenuController directly
                 if (!internalState) {
                     return ContextMenuController.call({
-                        cmd: { items: [item] as any[], type: actualItemType as any },
+                        cmd: getContextMenuCommand(
+                            [item] as any[],
+                            actualItemType,
+                            playlistContextId,
+                        ),
                         event,
                     });
                 }
@@ -353,7 +380,11 @@ export const useDefaultItemListControls = (args?: UseDefaultItemListControlsArgs
 
                 if (!enableMultiSelect) {
                     return ContextMenuController.call({
-                        cmd: { items: [item] as any[], type: actualItemType as any },
+                        cmd: getContextMenuCommand(
+                            [item] as any[],
+                            actualItemType,
+                            playlistContextId,
+                        ),
                         event,
                     });
                 }
@@ -362,7 +393,11 @@ export const useDefaultItemListControls = (args?: UseDefaultItemListControlsArgs
                 if (internalState.getSelected().length === 0) {
                     internalState.setSelected([item]);
                     return ContextMenuController.call({
-                        cmd: { items: [item] as any[], type: actualItemType as any },
+                        cmd: getContextMenuCommand(
+                            [item] as any[],
+                            actualItemType,
+                            playlistContextId,
+                        ),
                         event,
                     });
                 }
@@ -370,7 +405,11 @@ export const useDefaultItemListControls = (args?: UseDefaultItemListControlsArgs
                 else if (!internalState.isSelected(rowId)) {
                     internalState.setSelected([item]);
                     return ContextMenuController.call({
-                        cmd: { items: [item] as any[], type: actualItemType as any },
+                        cmd: getContextMenuCommand(
+                            [item] as any[],
+                            actualItemType,
+                            playlistContextId,
+                        ),
                         event,
                     });
                 }
@@ -387,7 +426,11 @@ export const useDefaultItemListControls = (args?: UseDefaultItemListControlsArgs
                           : itemTypeMapping[itemType] || itemType;
 
                 return ContextMenuController.call({
-                    cmd: { items: selectedItems as any[], type: selectedItemType as any },
+                    cmd: getContextMenuCommand(
+                        selectedItems as any[],
+                        selectedItemType,
+                        playlistContextId,
+                    ),
                     event,
                 });
             },
@@ -432,7 +475,7 @@ export const useDefaultItemListControls = (args?: UseDefaultItemListControlsArgs
 
             ...overrides,
         };
-    }, [enableMultiSelect, overrides, onColumnReordered, onColumnResized]);
+    }, [enableMultiSelect, onColumnReordered, onColumnResized, overrides, playlistContextId]);
 
     return controls;
 };

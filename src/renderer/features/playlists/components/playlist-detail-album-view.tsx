@@ -40,7 +40,7 @@ import {
 
 export const PlaylistDetailAlbumView = ({ data }: { data: PlaylistSongListResponse }) => {
     const player = usePlayer();
-    const { setItemCount, setListData } = useListContext();
+    const { id: playlistId, setItemCount, setListData } = useListContext();
     const { detail, display, grid, itemsPerPage, pagination, table } = useListSettings(
         ItemListKey.PLAYLIST_ALBUM,
     );
@@ -117,7 +117,11 @@ export const PlaylistDetailAlbumView = ({ data }: { data: PlaylistSongListRespon
                 }
 
                 ContextMenuController.call({
-                    cmd: { items: songs, type: LibraryItem.PLAYLIST_SONG },
+                    cmd: {
+                        contextPlaylistId: playlistId,
+                        items: songs,
+                        type: LibraryItem.PLAYLIST_SONG,
+                    },
                     event,
                 });
             },
@@ -133,6 +137,8 @@ export const PlaylistDetailAlbumView = ({ data }: { data: PlaylistSongListRespon
                     player.addToQueueByData(
                         sortSongList(rowSongs, SongListSort.ALBUM, SortOrder.ASC),
                         playType,
+                        undefined,
+                        playlistId,
                     );
                     return;
                 }
@@ -140,7 +146,7 @@ export const PlaylistDetailAlbumView = ({ data }: { data: PlaylistSongListRespon
             },
             onRating: undefined,
         };
-    }, [player]);
+    }, [player, playlistId]);
 
     useEffect(() => {
         setItemCount?.(totalAlbumCount);
@@ -188,7 +194,7 @@ export const PlaylistDetailAlbumView = ({ data }: { data: PlaylistSongListRespon
                         onSongRowDoubleClick={({ internalState, item }) => {
                             if (playlistSongs.length === 0) return;
                             internalState?.setSelected([item]);
-                            player.addToQueueByData(playlistSongs, Play.NOW, item.id);
+                            player.addToQueueByData(playlistSongs, Play.NOW, item.id, playlistId);
                         }}
                         overrideControls={albumControlOverrides}
                         scrollOffset={scrollOffset ?? 0}

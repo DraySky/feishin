@@ -138,10 +138,19 @@ type GenreContextMenuProps = {
 
 type PlaylistContextMenuProps = {
     items: Playlist[];
+    sidebarHidden?: {
+        isHidden: boolean;
+        onToggle: () => void;
+    };
+    sidebarPin?: {
+        isPinned: boolean;
+        onToggle: () => void;
+    };
     type: LibraryItem.PLAYLIST;
 };
 
 type PlaylistSongContextMenuProps = {
+    contextPlaylistId?: string;
     items: Song[];
     type: LibraryItem.PLAYLIST_SONG;
 };

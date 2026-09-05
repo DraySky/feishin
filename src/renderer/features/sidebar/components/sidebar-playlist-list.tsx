@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import { motion } from 'motion/react';
 import { createContext, memo, MouseEvent, useCallback, useContext, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { generatePath, Link, useParams } from 'react-router';
+import { generatePath, Link, useNavigate, useParams } from 'react-router';
 
 import styles from './sidebar-playlist-list.module.css';
 
@@ -14,9 +14,15 @@ import { usePlayer } from '/@/renderer/features/player/context/player-context';
 import { playlistsQueries } from '/@/renderer/features/playlists/api/playlists-api';
 import { openCreatePlaylistModal } from '/@/renderer/features/playlists/components/create-playlist-form';
 import { useIsMutatingSidebarPlaylistFolderMove } from '/@/renderer/features/playlists/mutations/sidebar-playlist-folder-move-mutation';
+import {
+    type PlaylistLastPlayedMap,
+    type SidebarPlaylistSortMode,
+    sortPlaylistsByLastPlayed,
+} from '/@/renderer/features/playlists/utils/playlist-sidebar-organization';
 import { ItemRowPlayControls } from '/@/renderer/features/shared/components/item-row-play-controls';
 import {
     collectFolderPaths,
+    getPlaylistLeafName,
     PlaylistFolderDragExpandProvider,
     PlaylistFolderViews,
     PlaylistRootAccordionControl,
@@ -32,6 +38,7 @@ import {
     useCurrentServer,
     useCurrentServerId,
     usePermissions,
+    useSidebarPlaylistFolderSeparator,
     useSidebarPlaylistListFilterRegex,
     useSidebarPlaylistMode,
     useSidebarPlaylistSorting,
@@ -42,6 +49,7 @@ import { ActionIcon } from '/@/shared/components/action-icon/action-icon';
 import { animationProps } from '/@/shared/components/animations/animation-props';
 import { animationVariants } from '/@/shared/components/animations/animation-variants';
 import { ButtonProps } from '/@/shared/components/button/button';
+import { DropdownMenu } from '/@/shared/components/dropdown-menu/dropdown-menu';
 import { Group } from '/@/shared/components/group/group';
 import { Icon } from '/@/shared/components/icon/icon';
 import { Image } from '/@/shared/components/image/image';
@@ -69,7 +77,65 @@ const getPlaylistOrderKey = (serverId: string | undefined, scope: 'owned' | 'sha
     return `playlist_order:${sid}:${scope}`;
 };
 
+const getPinnedPlaylistOrderKey = (serverId: string | undefined, scope: 'owned' | 'shared') => {
+    const sid = serverId || 'local';
+    return `pinned_playlist_order:${sid}:${scope}`;
+};
+
+const getHiddenPlaylistIdsKey = (serverId: string | undefined, scope: 'owned' | 'shared') => {
+    const sid = serverId || 'local';
+    return `hidden_playlist_ids:${sid}:${scope}`;
+};
+
+const splitPinnedPlaylists = (items: Playlist[], pinnedIds: string[]) => {
+    const pinnedIdSet = new Set(pinnedIds);
+    const itemById = new Map(items.map((item) => [item.id, item]));
+    const pinned = pinnedIds
+        .map((id) => itemById.get(id))
+        .filter((item): item is Playlist => item !== undefined);
+    const unpinned = items.filter((item) => !pinnedIdSet.has(item.id));
+
+    return { pinned, unpinned };
+};
+
+const reorderPlaylistIds = (
+    currentIds: string[],
+    sourceIds: string[],
+    targetId: string,
+    edge: 'bottom' | 'top',
+) => {
+    const targetIndex = currentIds.indexOf(targetId);
+    if (targetIndex === -1) return currentIds;
+
+    const idsWithoutSources = currentIds.filter((id) => !sourceIds.includes(id));
+    const sourcesBeforeTarget = sourceIds.filter((id) => {
+        const sourceIndex = currentIds.indexOf(id);
+        return sourceIndex !== -1 && sourceIndex < targetIndex;
+    }).length;
+    const insertIndexInFiltered =
+        edge === 'top' ? targetIndex - sourcesBeforeTarget : targetIndex - sourcesBeforeTarget + 1;
+    const insertIndex = Math.max(0, Math.min(insertIndexInFiltered, idsWithoutSources.length));
+
+    return [
+        ...idsWithoutSources.slice(0, insertIndex),
+        ...sourceIds,
+        ...idsWithoutSources.slice(insertIndex),
+    ];
+};
+
 export const SidebarPlaylistAddDragContext = createContext(false);
+
+interface SidebarPlaylistHiddenContextValue {
+    hiddenPlaylistIds: Set<string>;
+    onUnhide: (playlistId: string) => void;
+}
+
+const SidebarPlaylistHiddenContext = createContext<SidebarPlaylistHiddenContextValue>({
+    hiddenPlaylistIds: new Set(),
+    onUnhide: () => undefined,
+});
+
+const SidebarPlaylistSortContext = createContext<SidebarPlaylistSortMode>('default');
 
 const isAddToPlaylistDragSource = (source: DragData) => {
     return (
@@ -100,6 +166,7 @@ export const useSidebarPlaylistAddDragMonitor = () => {
 };
 
 export interface PlaylistRowButtonProps extends Omit<ButtonProps, 'onContextMenu' | 'onPlay'> {
+    isPinned?: boolean;
     item: Playlist;
     name: string;
     onContextMenu: (e: MouseEvent<HTMLAnchorElement>, item: Playlist) => void;
@@ -108,12 +175,13 @@ export interface PlaylistRowButtonProps extends Omit<ButtonProps, 'onContextMenu
 }
 
 export const PlaylistRowButton = memo(
-    ({ item, name, onContextMenu, onReorder, to }: PlaylistRowButtonProps) => {
+    ({ isPinned = false, item, name, onContextMenu, onReorder, to }: PlaylistRowButtonProps) => {
         const url = {
             pathname: generatePath(AppRoute.PLAYLISTS_DETAIL_SONGS, { playlistId: to }),
             state: { item },
         };
         const { t } = useTranslation();
+        const navigate = useNavigate();
         const sidebarPlaylistSorting = useSidebarPlaylistSorting();
         const sidebarPlaylistMode = useSidebarPlaylistMode();
         const isCompact = sidebarPlaylistMode === 'compact';
@@ -125,6 +193,9 @@ export const PlaylistRowButton = memo(
         const [isHovered, setIsHovered] = useState(false);
         const isSmartPlaylist = Boolean(item.rules);
         const isAddDragActive = useContext(SidebarPlaylistAddDragContext);
+        const { hiddenPlaylistIds, onUnhide } = useContext(SidebarPlaylistHiddenContext);
+        const sortMode = useContext(SidebarPlaylistSortContext);
+        const isHidden = hiddenPlaylistIds.has(item.id);
 
         const { isDraggedOver, isDragging, ref } = useDragDrop<HTMLAnchorElement>({
             drag: {
@@ -135,6 +206,7 @@ export const PlaylistRowButton = memo(
                     return item ? [item] : [];
                 },
                 itemType: LibraryItem.PLAYLIST,
+                metadata: { isPinned },
                 operation: [DragOperation.ADD, DragOperation.REORDER],
                 target: DragTarget.PLAYLIST,
             },
@@ -153,7 +225,12 @@ export const PlaylistRowButton = memo(
                         args.source.itemType === LibraryItem.PLAYLIST &&
                         args.source.type === DragTarget.PLAYLIST &&
                         (args.source.operation?.includes(DragOperation.REORDER) ?? false);
-                    return canAdd || (canReorder && sidebarPlaylistSorting);
+                    const sourceIsPinned = Boolean(args.source.metadata?.isPinned);
+                    const canReorderWithinGroup =
+                        canReorder &&
+                        sourceIsPinned === isPinned &&
+                        (isPinned || (sidebarPlaylistSorting && sortMode === 'default'));
+                    return canAdd || canReorderWithinGroup;
                 },
                 getData: () => {
                     return {
@@ -181,12 +258,20 @@ export const PlaylistRowButton = memo(
                         (args.edge === 'top' || args.edge === 'bottom') &&
                         onReorder
                     ) {
+                        const sourceIsPinned = Boolean(args.source.metadata?.isPinned);
+                        if (
+                            sourceIsPinned !== isPinned ||
+                            (!isPinned && (!sidebarPlaylistSorting || sortMode !== 'default'))
+                        ) {
+                            return;
+                        }
+
                         const sourceItems = Array.isArray(args.source.item)
                             ? (args.source.item as Playlist[])
                             : undefined;
 
                         // Prevent cross-scope reorders (owned <-> shared)
-                        if (sourceItems && sourceItems.length > 0) {
+                        if (!isPinned && sourceItems && sourceItems.length > 0) {
                             if (sourceItems.some((si) => si.ownerId !== item.ownerId)) {
                                 return;
                             }
@@ -272,7 +357,7 @@ export const PlaylistRowButton = memo(
             type: 'table',
         });
 
-        const isDimmed = isDragging || (isSmartPlaylist && isAddDragActive);
+        const isDimmed = isHidden || isDragging || (isSmartPlaylist && isAddDragActive);
 
         return (
             <MotionLink
@@ -285,6 +370,13 @@ export const PlaylistRowButton = memo(
                     [styles.rowOpen]: isOpen,
                 })}
                 initial={false}
+                onClick={(e: MouseEvent<HTMLAnchorElement>) => {
+                    if (e.button === 0 && e.altKey && isHidden && !isDragging) {
+                        e.preventDefault();
+                        onUnhide(item.id);
+                        navigate(url.pathname, { state: url.state });
+                    }
+                }}
                 onContextMenu={(e: MouseEvent<HTMLAnchorElement>) => {
                     e.preventDefault();
                     onContextMenu(e, item);
@@ -297,15 +389,25 @@ export const PlaylistRowButton = memo(
             >
                 {isCompact ? (
                     <>
-                        <Text
-                            className={clsx(styles.compactName, {
-                                [styles.nameActive]: isPlaying,
-                            })}
-                            fw={500}
-                            size="md"
-                        >
-                            {name}
-                        </Text>
+                        <div className={clsx(styles.nameGroup, styles.nameGroupCompact)}>
+                            {isPinned && (
+                                <Icon
+                                    className={styles.pinIndicator}
+                                    color="primary"
+                                    icon="pin"
+                                    size="xs"
+                                />
+                            )}
+                            <Text
+                                className={clsx(styles.compactName, {
+                                    [styles.nameActive]: isPlaying,
+                                })}
+                                fw={500}
+                                size="md"
+                            >
+                                {name}
+                            </Text>
+                        </div>
                         {isHovered && (
                             <ItemRowPlayControls
                                 className={clsx(styles.controls, styles.controlsCompact)}
@@ -318,15 +420,25 @@ export const PlaylistRowButton = memo(
                         <div className={styles.rowGroup}>
                             <Image containerClassName={styles.imageContainer} src={imageUrl} />
                             <div className={styles.metadata}>
-                                <Text
-                                    className={clsx(styles.name, {
-                                        [styles.nameActive]: isPlaying,
-                                    })}
-                                    fw={500}
-                                    size="md"
-                                >
-                                    {name}
-                                </Text>
+                                <div className={styles.nameGroup}>
+                                    {isPinned && (
+                                        <Icon
+                                            className={styles.pinIndicator}
+                                            color="primary"
+                                            icon="pin"
+                                            size="xs"
+                                        />
+                                    )}
+                                    <Text
+                                        className={clsx(styles.name, {
+                                            [styles.nameActive]: isPlaying,
+                                        })}
+                                        fw={500}
+                                        size="md"
+                                    >
+                                        {name}
+                                    </Text>
+                                </div>
                                 <div className={styles.metadataGroup}>
                                     <div
                                         className={clsx(
@@ -378,11 +490,26 @@ export const PlaylistRowButton = memo(
     },
 );
 
-export const SidebarPlaylistList = () => {
+interface SidebarPlaylistListProps {
+    enableHiddenPlaylists?: boolean;
+    lastPlayed?: PlaylistLastPlayedMap;
+    onSortModeChange?: (sortMode: SidebarPlaylistSortMode) => void;
+    revealHiddenPlaylists?: boolean;
+    sortMode?: SidebarPlaylistSortMode;
+}
+
+export const SidebarPlaylistList = ({
+    enableHiddenPlaylists = false,
+    lastPlayed = {},
+    onSortModeChange,
+    revealHiddenPlaylists = false,
+    sortMode = 'default',
+}: SidebarPlaylistListProps = {}) => {
     const player = usePlayer();
     const { t } = useTranslation();
     const server = useCurrentServer();
     const sidebarPlaylistSorting = useSidebarPlaylistSorting();
+    const folderSeparator = useSidebarPlaylistFolderSeparator();
     const filterRegex = useSidebarPlaylistListFilterRegex();
 
     const playlistsQuery = useQuery(
@@ -403,16 +530,68 @@ export const SidebarPlaylistList = () => {
         [player, server.id],
     );
 
+    const [pinnedPlaylistIds, setPinnedPlaylistIds] = useLocalStorage<string[]>({
+        defaultValue: [],
+        key: getPinnedPlaylistOrderKey(server.id, 'owned'),
+    });
+    const [hiddenPlaylistIds, setHiddenPlaylistIds] = useLocalStorage<string[]>({
+        defaultValue: [],
+        key: getHiddenPlaylistIdsKey(server.id, 'owned'),
+    });
+    const hiddenPlaylistIdSet = useMemo(
+        () => new Set(enableHiddenPlaylists ? hiddenPlaylistIds : []),
+        [enableHiddenPlaylists, hiddenPlaylistIds],
+    );
+    const handleUnhidePlaylist = useCallback(
+        (playlistId: string) => {
+            setHiddenPlaylistIds((current) => current.filter((id) => id !== playlistId));
+        },
+        [setHiddenPlaylistIds],
+    );
+
     const handleContextMenu = useCallback(
         (e: MouseEvent<HTMLAnchorElement>, playlist: Playlist) => {
             e.preventDefault();
             e.stopPropagation();
+            const isPinned = pinnedPlaylistIds.includes(playlist.id);
+            const isHidden = hiddenPlaylistIdSet.has(playlist.id);
             ContextMenuController.call({
-                cmd: { items: [playlist], type: LibraryItem.PLAYLIST },
+                cmd: {
+                    items: [playlist],
+                    sidebarHidden: enableHiddenPlaylists
+                        ? {
+                              isHidden,
+                              onToggle: () => {
+                                  setHiddenPlaylistIds((current) =>
+                                      current.includes(playlist.id)
+                                          ? current.filter((id) => id !== playlist.id)
+                                          : [...current, playlist.id],
+                                  );
+                              },
+                          }
+                        : undefined,
+                    sidebarPin: {
+                        isPinned,
+                        onToggle: () => {
+                            setPinnedPlaylistIds((current) =>
+                                current.includes(playlist.id)
+                                    ? current.filter((id) => id !== playlist.id)
+                                    : [...current, playlist.id],
+                            );
+                        },
+                    },
+                    type: LibraryItem.PLAYLIST,
+                },
                 event: e,
             });
         },
-        [],
+        [
+            enableHiddenPlaylists,
+            hiddenPlaylistIdSet,
+            pinnedPlaylistIds,
+            setHiddenPlaylistIds,
+            setPinnedPlaylistIds,
+        ],
     );
 
     const [playlistOrder, setPlaylistOrder] = useLocalStorage<string[]>({
@@ -472,6 +651,37 @@ export const SidebarPlaylistList = () => {
         filterRegex,
     ]);
 
+    const { pinned: allPinnedPlaylistItems, unpinned: allUnpinnedPlaylistItems } = useMemo(
+        () => splitPinnedPlaylists(playlistItems.items ?? [], pinnedPlaylistIds),
+        [pinnedPlaylistIds, playlistItems.items],
+    );
+    const sortedUnpinnedPlaylistItems = useMemo(
+        () =>
+            sortMode === 'recentlyPlayed'
+                ? sortPlaylistsByLastPlayed(allUnpinnedPlaylistItems, lastPlayed)
+                : allUnpinnedPlaylistItems,
+        [allUnpinnedPlaylistItems, lastPlayed, sortMode],
+    );
+    const pinnedPlaylistItems = useMemo(
+        () =>
+            allPinnedPlaylistItems.filter(
+                (playlist) => revealHiddenPlaylists || !hiddenPlaylistIdSet.has(playlist.id),
+            ),
+        [allPinnedPlaylistItems, hiddenPlaylistIdSet, revealHiddenPlaylists],
+    );
+    const unpinnedPlaylistItems = useMemo(
+        () =>
+            sortedUnpinnedPlaylistItems.filter(
+                (playlist) => revealHiddenPlaylists || !hiddenPlaylistIdSet.has(playlist.id),
+            ),
+        [hiddenPlaylistIdSet, revealHiddenPlaylists, sortedUnpinnedPlaylistItems],
+    );
+    const pinnedPlaylistIdSet = useMemo(() => new Set(pinnedPlaylistIds), [pinnedPlaylistIds]);
+    const hiddenContextValue = useMemo(
+        () => ({ hiddenPlaylistIds: hiddenPlaylistIdSet, onUnhide: handleUnhidePlaylist }),
+        [handleUnhidePlaylist, hiddenPlaylistIdSet],
+    );
+
     const handleReorder = (
         sourceIds: string[],
         targetId: string,
@@ -479,38 +689,35 @@ export const SidebarPlaylistList = () => {
     ) => {
         if (!playlistItems?.items || !edge) return;
 
-        const currentIds = playlistItems.items.map((p) => p.id);
-        const targetIndex = currentIds.indexOf(targetId);
-        if (targetIndex === -1) return;
+        const targetIsPinned = pinnedPlaylistIdSet.has(targetId);
+        const sourceIsPinned = sourceIds.every((id) => pinnedPlaylistIdSet.has(id));
+        const sourceIsUnpinned = sourceIds.every((id) => !pinnedPlaylistIdSet.has(id));
+        if (targetIsPinned !== sourceIsPinned || (!targetIsPinned && !sourceIsUnpinned)) return;
 
-        const idsWithoutSources = currentIds.filter((id) => !sourceIds.includes(id));
+        if (targetIsPinned) {
+            setPinnedPlaylistIds((current) =>
+                reorderPlaylistIds(current, sourceIds, targetId, edge),
+            );
+            return;
+        }
 
-        const sourcesBeforeTarget = sourceIds.filter((id) => {
-            const sourceIndex = currentIds.indexOf(id);
-            return sourceIndex !== -1 && sourceIndex < targetIndex;
-        }).length;
+        if (sortMode !== 'default') return;
 
-        const insertIndexInFiltered =
-            edge === 'top'
-                ? targetIndex - sourcesBeforeTarget
-                : targetIndex - sourcesBeforeTarget + 1;
-
-        const insertIndex = Math.max(0, Math.min(insertIndexInFiltered, idsWithoutSources.length));
-
-        const reorderedIds = [
-            ...idsWithoutSources.slice(0, insertIndex),
-            ...sourceIds,
-            ...idsWithoutSources.slice(insertIndex),
-        ];
-
-        setPlaylistOrder(reorderedIds);
+        setPlaylistOrder(
+            reorderPlaylistIds(
+                playlistItems.items.map((playlist) => playlist.id),
+                sourceIds,
+                targetId,
+                edge,
+            ),
+        );
     };
 
     const handleCreatePlaylistModal = (e: MouseEvent<HTMLButtonElement>) => {
         openCreatePlaylistModal(server, e);
     };
 
-    const folderViewState = usePlaylistFolderViewState(playlistItems?.items ?? []);
+    const folderViewState = usePlaylistFolderViewState(unpinnedPlaylistItems);
     const { folderView, groups, tree } = folderViewState;
     const navigation = usePlaylistNavigationState();
     const inNavigation = folderView === 'navigation' && navigation.pathStack.length > 0;
@@ -568,6 +775,34 @@ export const SidebarPlaylistList = () => {
                         </Text>
                     </Group>
                     <Group gap="xs" wrap="nowrap">
+                        {onSortModeChange && (
+                            <DropdownMenu position="bottom-end">
+                                <DropdownMenu.Target>
+                                    <ActionIcon
+                                        icon="sort"
+                                        iconProps={{ size: 'lg' }}
+                                        onClick={(e) => e.stopPropagation()}
+                                        size="xs"
+                                        tooltip={{ label: t('action.sortPlaylists') }}
+                                        variant="subtle"
+                                    />
+                                </DropdownMenu.Target>
+                                <DropdownMenu.Dropdown onClick={(event) => event.stopPropagation()}>
+                                    <DropdownMenu.Item
+                                        isSelected={sortMode === 'default'}
+                                        onClick={() => onSortModeChange?.('default')}
+                                    >
+                                        {t('filter.default')}
+                                    </DropdownMenu.Item>
+                                    <DropdownMenu.Item
+                                        isSelected={sortMode === 'recentlyPlayed'}
+                                        onClick={() => onSortModeChange?.('recentlyPlayed')}
+                                    >
+                                        {t('filter.recentlyPlayed')}
+                                    </DropdownMenu.Item>
+                                </DropdownMenu.Dropdown>
+                            </DropdownMenu>
+                        )}
                         <ActionIcon
                             icon="add"
                             iconProps={{
@@ -620,27 +855,55 @@ export const SidebarPlaylistList = () => {
             </PlaylistRootAccordionControl>
             <Accordion.Panel className={styles.panel}>
                 <LoadingOverlay pos="absolute" visible={isFolderMovePending} />
-                <PlaylistFolderDragExpandProvider expandedSet={expandedSet} setMany={setMany}>
-                    <PlaylistFolderViews
-                        {...folderViewState}
-                        allPlaylists={playlistItems?.items ?? []}
-                        expandedSet={expandedSet}
-                        navigation={navigation}
-                        onContextMenu={handleContextMenu}
-                        onReorder={handleReorder}
-                        onToggleFolder={toggle}
-                    />
-                </PlaylistFolderDragExpandProvider>
+                <SidebarPlaylistHiddenContext.Provider value={hiddenContextValue}>
+                    <SidebarPlaylistSortContext.Provider value={sortMode}>
+                        <PlaylistFolderDragExpandProvider
+                            expandedSet={expandedSet}
+                            setMany={setMany}
+                        >
+                            {pinnedPlaylistItems.map((playlist) => (
+                                <PlaylistRowButton
+                                    isPinned
+                                    item={playlist}
+                                    key={playlist.id}
+                                    name={
+                                        folderViewState.foldersEnabled
+                                            ? getPlaylistLeafName(playlist.name, folderSeparator)
+                                            : playlist.name
+                                    }
+                                    onContextMenu={handleContextMenu}
+                                    onReorder={handleReorder}
+                                    to={playlist.id}
+                                />
+                            ))}
+                            <PlaylistFolderViews
+                                {...folderViewState}
+                                allPlaylists={playlistItems?.items ?? []}
+                                expandedSet={expandedSet}
+                                navigation={navigation}
+                                onContextMenu={handleContextMenu}
+                                onReorder={handleReorder}
+                                onToggleFolder={toggle}
+                            />
+                        </PlaylistFolderDragExpandProvider>
+                    </SidebarPlaylistSortContext.Provider>
+                </SidebarPlaylistHiddenContext.Provider>
             </Accordion.Panel>
         </Accordion.Item>
     );
 };
 
-export const SidebarSharedPlaylistList = () => {
+export const SidebarSharedPlaylistList = ({
+    enableHiddenPlaylists = false,
+    lastPlayed = {},
+    revealHiddenPlaylists = false,
+    sortMode = 'default',
+}: SidebarPlaylistListProps = {}) => {
     const player = usePlayer();
     const { t } = useTranslation();
     const server = useCurrentServer();
     const sidebarPlaylistSorting = useSidebarPlaylistSorting();
+    const folderSeparator = useSidebarPlaylistFolderSeparator();
     const filterRegex = useSidebarPlaylistListFilterRegex();
 
     const playlistsQuery = useQuery(
@@ -662,19 +925,68 @@ export const SidebarSharedPlaylistList = () => {
         [player, server.id],
     );
 
+    const [pinnedPlaylistIds, setPinnedPlaylistIds] = useLocalStorage<string[]>({
+        defaultValue: [],
+        key: getPinnedPlaylistOrderKey(server.id, 'shared'),
+    });
+    const [hiddenPlaylistIds, setHiddenPlaylistIds] = useLocalStorage<string[]>({
+        defaultValue: [],
+        key: getHiddenPlaylistIdsKey(server.id, 'shared'),
+    });
+    const hiddenPlaylistIdSet = useMemo(
+        () => new Set(enableHiddenPlaylists ? hiddenPlaylistIds : []),
+        [enableHiddenPlaylists, hiddenPlaylistIds],
+    );
+    const handleUnhidePlaylist = useCallback(
+        (playlistId: string) => {
+            setHiddenPlaylistIds((current) => current.filter((id) => id !== playlistId));
+        },
+        [setHiddenPlaylistIds],
+    );
+
     const handleContextMenu = useCallback(
         (e: MouseEvent<HTMLAnchorElement>, playlist: Playlist) => {
             e.preventDefault();
             e.stopPropagation();
+            const isPinned = pinnedPlaylistIds.includes(playlist.id);
+            const isHidden = hiddenPlaylistIdSet.has(playlist.id);
             ContextMenuController.call({
                 cmd: {
                     items: [playlist],
+                    sidebarHidden: enableHiddenPlaylists
+                        ? {
+                              isHidden,
+                              onToggle: () => {
+                                  setHiddenPlaylistIds((current) =>
+                                      current.includes(playlist.id)
+                                          ? current.filter((id) => id !== playlist.id)
+                                          : [...current, playlist.id],
+                                  );
+                              },
+                          }
+                        : undefined,
+                    sidebarPin: {
+                        isPinned,
+                        onToggle: () => {
+                            setPinnedPlaylistIds((current) =>
+                                current.includes(playlist.id)
+                                    ? current.filter((id) => id !== playlist.id)
+                                    : [...current, playlist.id],
+                            );
+                        },
+                    },
                     type: LibraryItem.PLAYLIST,
                 },
                 event: e,
             });
         },
-        [],
+        [
+            enableHiddenPlaylists,
+            hiddenPlaylistIdSet,
+            pinnedPlaylistIds,
+            setHiddenPlaylistIds,
+            setPinnedPlaylistIds,
+        ],
     );
 
     const [playlistOrder, setPlaylistOrder] = useLocalStorage<string[]>({
@@ -734,6 +1046,37 @@ export const SidebarSharedPlaylistList = () => {
         filterRegex,
     ]);
 
+    const { pinned: allPinnedPlaylistItems, unpinned: allUnpinnedPlaylistItems } = useMemo(
+        () => splitPinnedPlaylists(playlistItems.items ?? [], pinnedPlaylistIds),
+        [pinnedPlaylistIds, playlistItems.items],
+    );
+    const sortedUnpinnedPlaylistItems = useMemo(
+        () =>
+            sortMode === 'recentlyPlayed'
+                ? sortPlaylistsByLastPlayed(allUnpinnedPlaylistItems, lastPlayed)
+                : allUnpinnedPlaylistItems,
+        [allUnpinnedPlaylistItems, lastPlayed, sortMode],
+    );
+    const pinnedPlaylistItems = useMemo(
+        () =>
+            allPinnedPlaylistItems.filter(
+                (playlist) => revealHiddenPlaylists || !hiddenPlaylistIdSet.has(playlist.id),
+            ),
+        [allPinnedPlaylistItems, hiddenPlaylistIdSet, revealHiddenPlaylists],
+    );
+    const unpinnedPlaylistItems = useMemo(
+        () =>
+            sortedUnpinnedPlaylistItems.filter(
+                (playlist) => revealHiddenPlaylists || !hiddenPlaylistIdSet.has(playlist.id),
+            ),
+        [hiddenPlaylistIdSet, revealHiddenPlaylists, sortedUnpinnedPlaylistItems],
+    );
+    const pinnedPlaylistIdSet = useMemo(() => new Set(pinnedPlaylistIds), [pinnedPlaylistIds]);
+    const hiddenContextValue = useMemo(
+        () => ({ hiddenPlaylistIds: hiddenPlaylistIdSet, onUnhide: handleUnhidePlaylist }),
+        [handleUnhidePlaylist, hiddenPlaylistIdSet],
+    );
+
     const handleReorder = (
         sourceIds: string[],
         targetId: string,
@@ -741,34 +1084,31 @@ export const SidebarSharedPlaylistList = () => {
     ) => {
         if (!playlistItems?.items || !edge) return;
 
-        const currentIds = playlistItems.items.map((p) => p.id);
-        const targetIndex = currentIds.indexOf(targetId);
-        if (targetIndex === -1) return;
+        const targetIsPinned = pinnedPlaylistIdSet.has(targetId);
+        const sourceIsPinned = sourceIds.every((id) => pinnedPlaylistIdSet.has(id));
+        const sourceIsUnpinned = sourceIds.every((id) => !pinnedPlaylistIdSet.has(id));
+        if (targetIsPinned !== sourceIsPinned || (!targetIsPinned && !sourceIsUnpinned)) return;
 
-        const idsWithoutSources = currentIds.filter((id) => !sourceIds.includes(id));
+        if (targetIsPinned) {
+            setPinnedPlaylistIds((current) =>
+                reorderPlaylistIds(current, sourceIds, targetId, edge),
+            );
+            return;
+        }
 
-        const sourcesBeforeTarget = sourceIds.filter((id) => {
-            const sourceIndex = currentIds.indexOf(id);
-            return sourceIndex !== -1 && sourceIndex < targetIndex;
-        }).length;
+        if (sortMode !== 'default') return;
 
-        const insertIndexInFiltered =
-            edge === 'top'
-                ? targetIndex - sourcesBeforeTarget
-                : targetIndex - sourcesBeforeTarget + 1;
-
-        const insertIndex = Math.max(0, Math.min(insertIndexInFiltered, idsWithoutSources.length));
-
-        const reorderedIds = [
-            ...idsWithoutSources.slice(0, insertIndex),
-            ...sourceIds,
-            ...idsWithoutSources.slice(insertIndex),
-        ];
-
-        setPlaylistOrder(reorderedIds);
+        setPlaylistOrder(
+            reorderPlaylistIds(
+                playlistItems.items.map((playlist) => playlist.id),
+                sourceIds,
+                targetId,
+                edge,
+            ),
+        );
     };
 
-    const folderViewState = usePlaylistFolderViewState(playlistItems?.items ?? []);
+    const folderViewState = usePlaylistFolderViewState(unpinnedPlaylistItems);
     const navigation = usePlaylistNavigationState();
     const { expandedSet, setMany, toggle } = usePlaylistFolderState('shared');
     const inNavigation =
@@ -784,7 +1124,7 @@ export const SidebarSharedPlaylistList = () => {
 
     const isFolderMovePending = useIsMutatingSidebarPlaylistFolderMove();
 
-    if (playlistItems?.items?.length === 0) {
+    if (pinnedPlaylistItems.length === 0 && unpinnedPlaylistItems.length === 0) {
         return null;
     }
 
@@ -809,17 +1149,39 @@ export const SidebarSharedPlaylistList = () => {
             </Accordion.Control>
             <Accordion.Panel className={styles.panel}>
                 <LoadingOverlay pos="absolute" visible={isFolderMovePending} />
-                <PlaylistFolderDragExpandProvider expandedSet={expandedSet} setMany={setMany}>
-                    <PlaylistFolderViews
-                        {...folderViewState}
-                        allPlaylists={playlistItems?.items ?? []}
-                        expandedSet={expandedSet}
-                        navigation={navigation}
-                        onContextMenu={handleContextMenu}
-                        onReorder={handleReorder}
-                        onToggleFolder={toggle}
-                    />
-                </PlaylistFolderDragExpandProvider>
+                <SidebarPlaylistHiddenContext.Provider value={hiddenContextValue}>
+                    <SidebarPlaylistSortContext.Provider value={sortMode}>
+                        <PlaylistFolderDragExpandProvider
+                            expandedSet={expandedSet}
+                            setMany={setMany}
+                        >
+                            {pinnedPlaylistItems.map((playlist) => (
+                                <PlaylistRowButton
+                                    isPinned
+                                    item={playlist}
+                                    key={playlist.id}
+                                    name={
+                                        folderViewState.foldersEnabled
+                                            ? getPlaylistLeafName(playlist.name, folderSeparator)
+                                            : playlist.name
+                                    }
+                                    onContextMenu={handleContextMenu}
+                                    onReorder={handleReorder}
+                                    to={playlist.id}
+                                />
+                            ))}
+                            <PlaylistFolderViews
+                                {...folderViewState}
+                                allPlaylists={playlistItems?.items ?? []}
+                                expandedSet={expandedSet}
+                                navigation={navigation}
+                                onContextMenu={handleContextMenu}
+                                onReorder={handleReorder}
+                                onToggleFolder={toggle}
+                            />
+                        </PlaylistFolderDragExpandProvider>
+                    </SidebarPlaylistSortContext.Provider>
+                </SidebarPlaylistHiddenContext.Provider>
             </Accordion.Panel>
         </Accordion.Item>
     );

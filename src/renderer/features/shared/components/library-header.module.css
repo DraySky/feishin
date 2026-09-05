@@ -188,3 +188,13 @@
         justify-content: space-between;
     }
 }
+
+@media (width >= 900px) {
+    @container (min-width: $mantine-breakpoint-sm) {
+        .library-header.condensed-hero {
+            min-height: 340px;
+            padding-top: 2rem;
+            padding-bottom: 2.5rem;
+        }
+    }
+}

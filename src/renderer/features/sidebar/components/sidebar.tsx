@@ -1,12 +1,18 @@
 import clsx from 'clsx';
 import { AnimatePresence, motion } from 'motion/react';
-import { MouseEvent, useMemo } from 'react';
+import { MouseEvent, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import styles from './sidebar.module.css';
 
 import { useItemImageUrl } from '/@/renderer/components/item-image/item-image';
 import { ContextMenuController } from '/@/renderer/features/context-menu/context-menu-controller';
+import {
+    getPlaylistLastPlayedKey,
+    getPlaylistSortModeKey,
+    type PlaylistLastPlayedMap,
+    type SidebarPlaylistSortMode,
+} from '/@/renderer/features/playlists/utils/playlist-sidebar-organization';
 import {
     useIsRadioActive,
     useRadioPlayer,
@@ -21,9 +27,11 @@ import {
     SidebarSharedPlaylistList,
     useSidebarPlaylistAddDragMonitor,
 } from '/@/renderer/features/sidebar/components/sidebar-playlist-list';
+import { useAppFocus } from '/@/renderer/hooks/use-app-focus';
 import {
     useAppStore,
     useAppStoreActions,
+    useCurrentServerId,
     useFullScreenPlayerStore,
     useGeneralSettings,
     usePlayerSong,
@@ -45,16 +53,61 @@ import { ImageUnloader } from '/@/shared/components/image/image';
 import { ScrollArea } from '/@/shared/components/scroll-area/scroll-area';
 import { Text } from '/@/shared/components/text/text';
 import { Tooltip } from '/@/shared/components/tooltip/tooltip';
+import { useLocalStorage } from '/@/shared/hooks/use-local-storage';
 import { ExplicitStatus, LibraryItem } from '/@/shared/types/domain-types';
 import { Platform } from '/@/shared/types/types';
 
 const SidebarPlaylistSection = () => {
     const isAddDragActive = useSidebarPlaylistAddDragMonitor();
+    const isAppFocused = useAppFocus();
+    const serverId = useCurrentServerId();
+    const [isRevealHiddenActive, setIsRevealHiddenActive] = useState(false);
+    const [storedSortMode, setSortMode] = useLocalStorage<SidebarPlaylistSortMode>({
+        defaultValue: 'default',
+        key: getPlaylistSortModeKey(serverId),
+    });
+    const [playlistLastPlayed] = useLocalStorage<PlaylistLastPlayedMap>({
+        defaultValue: {},
+        key: getPlaylistLastPlayedKey(serverId),
+    });
+    const sortMode = storedSortMode === 'recentlyPlayed' ? storedSortMode : 'default';
+
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Alt') setIsRevealHiddenActive(true);
+        };
+        const handleKeyUp = (event: KeyboardEvent) => {
+            if (event.key === 'Alt') setIsRevealHiddenActive(false);
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!isAppFocused) setIsRevealHiddenActive(false);
+    }, [isAppFocused]);
 
     return (
         <SidebarPlaylistAddDragContext.Provider value={isAddDragActive}>
-            <SidebarPlaylistList />
-            <SidebarSharedPlaylistList />
+            <SidebarPlaylistList
+                enableHiddenPlaylists
+                lastPlayed={playlistLastPlayed}
+                onSortModeChange={setSortMode}
+                revealHiddenPlaylists={isAppFocused && isRevealHiddenActive}
+                sortMode={sortMode}
+            />
+            <SidebarSharedPlaylistList
+                enableHiddenPlaylists
+                lastPlayed={playlistLastPlayed}
+                revealHiddenPlaylists={isAppFocused && isRevealHiddenActive}
+                sortMode={sortMode}
+            />
         </SidebarPlaylistAddDragContext.Provider>
     );
 };

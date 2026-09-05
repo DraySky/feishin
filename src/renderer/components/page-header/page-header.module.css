@@ -16,6 +16,16 @@
     opacity: 1;
 }
 
+.container.fade-on-scroll {
+    transition:
+        opacity 160ms ease,
+        visibility 0s linear 160ms;
+}
+
+.container.fade-on-scroll[data-visible='true'] {
+    transition-delay: 0s;
+}
+
 .container.visible {
     visibility: visible;
     pointer-events: auto;

@@ -162,6 +162,7 @@ const AlbumDetailRoute = () => {
             <NativeScrollArea
                 pageHeaderProps={{
                     backgroundColor: background,
+                    backgroundOpacity: 1,
                     children: (
                         <LibraryHeaderBar>
                             <LibraryHeaderBar.PlayButton
@@ -175,8 +176,10 @@ const AlbumDetailRoute = () => {
                             <LibraryHeaderBar.Title>{detailQuery.data.name}</LibraryHeaderBar.Title>
                         </LibraryHeaderBar>
                     ),
+                    fadeOnScroll: true,
                     offset: 200,
-                    target: headerRef,
+                    revealBefore: 30,
+                    target: heroRef,
                 }}
                 ref={scrollAreaRef}
             >

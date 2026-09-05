@@ -126,6 +126,7 @@ export const PlaylistDetailSongListTable = forwardRef<any, PlaylistDetailSongLis
                     }
 
                     playSongFromItemListControl({
+                        contextPlaylistId: playlistId,
                         index,
                         internalState,
                         item: item as Song,
@@ -285,6 +286,7 @@ export const PlaylistDetailSongListEditTable = forwardRef<any, PlaylistDetailSon
                     }
 
                     playSongFromItemListControl({
+                        contextPlaylistId: playlistId,
                         index,
                         internalState,
                         item: item as Song,

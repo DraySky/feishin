@@ -380,6 +380,7 @@ const PlaylistDetailSongListRoute = () => {
                 <NativeScrollArea
                     pageHeaderProps={{
                         backgroundColor: background,
+                        backgroundOpacity: 1,
                         children: (
                             <LibraryHeaderBar>
                                 <LibraryHeaderBar.PlayButton
@@ -401,8 +402,10 @@ const PlaylistDetailSongListRoute = () => {
                                 )}
                             </LibraryHeaderBar>
                         ),
+                        fadeOnScroll: true,
                         offset: 200,
-                        target: headerRef,
+                        revealBefore: 30,
+                        target: heroRef,
                     }}
                     ref={scrollAreaRef}
                 >

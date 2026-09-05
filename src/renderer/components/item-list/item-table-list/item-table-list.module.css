@@ -50,6 +50,13 @@
     position: relative;
 }
 
+.item-table-list-container[data-sticky-header-visible]
+    .item-table-pinned-intersection-grid-container.with-header,
+.item-table-list-container[data-sticky-header-visible]
+    .item-table-pinned-rows-grid-container.with-header {
+    visibility: hidden;
+}
+
 .item-table-pinned-rows-grid-container.header-fixed {
     position: fixed !important;
     top: 65px;

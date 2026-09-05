@@ -8,12 +8,13 @@ import { LibraryItem, Song } from '/@/shared/types/domain-types';
 import { Play } from '/@/shared/types/types';
 
 interface PlayActionProps {
+    contextPlaylistId?: string;
     ids: string[];
     itemType: LibraryItem;
     songs?: Song[];
 }
 
-export const PlayAction = ({ ids, itemType, songs }: PlayActionProps) => {
+export const PlayAction = ({ contextPlaylistId, ids, itemType, songs }: PlayActionProps) => {
     const { t } = useTranslation();
     const player = usePlayer();
     const serverId = useCurrentServerId();
@@ -27,12 +28,12 @@ export const PlayAction = ({ ids, itemType, songs }: PlayActionProps) => {
                 itemType === LibraryItem.PLAYLIST_SONG ||
                 itemType === LibraryItem.QUEUE_SONG
             ) {
-                player.addToQueueByData(songs || [], playType);
+                player.addToQueueByData(songs || [], playType, undefined, contextPlaylistId);
             } else {
                 player.addToQueueByFetch(serverId, ids, itemType, playType);
             }
         },
-        [ids, itemType, player, serverId, songs],
+        [contextPlaylistId, ids, itemType, player, serverId, songs],
     );
 
     const handlePlayNow = useCallback(() => {

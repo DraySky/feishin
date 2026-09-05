@@ -912,6 +912,7 @@ const ItemTableListStickyUI = memo(
         const { shouldShowStickyHeader, stickyTop } = useStickyTableHeader({
             containerRef,
             enabled: enableHeader && enableStickyHeader,
+            headerHeight,
             headerRef: pinnedRowRef,
             mainGridRef: rowRef,
             pinnedLeftColumnRef,

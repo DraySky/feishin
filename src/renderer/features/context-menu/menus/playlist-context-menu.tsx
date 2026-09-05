@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { AddToPlaylistAction } from '/@/renderer/features/context-menu/actions/add-to-playlist-action';
 import { DeletePlaylistAction } from '/@/renderer/features/context-menu/actions/delete-playlist-action';
@@ -12,10 +13,24 @@ import { LibraryItem, Playlist } from '/@/shared/types/domain-types';
 
 interface PlaylistContextMenuProps {
     items: Playlist[];
+    sidebarHidden?: {
+        isHidden: boolean;
+        onToggle: () => void;
+    };
+    sidebarPin?: {
+        isPinned: boolean;
+        onToggle: () => void;
+    };
     type: LibraryItem.PLAYLIST;
 }
 
-export const PlaylistContextMenu = ({ items, type }: PlaylistContextMenuProps) => {
+export const PlaylistContextMenu = ({
+    items,
+    sidebarHidden,
+    sidebarPin,
+    type,
+}: PlaylistContextMenuProps) => {
+    const { t } = useTranslation();
     const { ids } = useMemo(() => {
         const ids = items.map((item) => item.id);
         return { ids };
@@ -37,6 +52,23 @@ export const PlaylistContextMenu = ({ items, type }: PlaylistContextMenuProps) =
             <PlayAction ids={ids} itemType={LibraryItem.PLAYLIST} />
             <ContextMenu.Divider />
             <AddToPlaylistAction items={ids} itemType={LibraryItem.PLAYLIST} />
+            {sidebarPin && (
+                <ContextMenu.Item
+                    leftIcon={sidebarPin.isPinned ? 'unpin' : 'pin'}
+                    onSelect={sidebarPin.onToggle}
+                >
+                    {t(sidebarPin.isPinned ? 'action.unpinPlaylist' : 'action.pinPlaylist')}
+                </ContextMenu.Item>
+            )}
+            {sidebarHidden && (
+                <ContextMenu.Item
+                    leftIcon={sidebarHidden.isHidden ? 'visibility' : 'visibilityOff'}
+                    leftIconFill="default"
+                    onSelect={sidebarHidden.onToggle}
+                >
+                    {t(sidebarHidden.isHidden ? 'action.unhidePlaylist' : 'action.hidePlaylist')}
+                </ContextMenu.Item>
+            )}
             <ContextMenu.Divider />
             <EditPlaylistAction disabled={!canEditPlaylist} items={items} />
             <DeletePlaylistAction disabled={!canDeletePlaylist} items={items} />

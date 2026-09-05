@@ -37,6 +37,7 @@ import { Play } from '/@/shared/types/types';
 interface LibraryHeaderProps {
     children?: ReactNode;
     compact?: boolean;
+    condensedHero?: boolean;
     containerClassName?: string;
     imageOverlay?: ReactNode;
     imagePlaceholderUrl?: null | string;
@@ -61,6 +62,7 @@ export const LibraryHeader = forwardRef(
         {
             children,
             compact,
+            condensedHero,
             containerClassName,
             imageOverlay,
             imageUrl,
@@ -160,6 +162,7 @@ export const LibraryHeader = forwardRef(
                     styles.libraryHeader,
                     containerClassName,
                     compact && styles.compact,
+                    condensedHero && styles.condensedHero,
                 )}
                 ref={ref}
             >

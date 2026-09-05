@@ -114,6 +114,7 @@ export const useAutoDJ = () => {
                                 albumsToAdd,
                                 LibraryItem.ALBUM,
                                 Play.LAST,
+                                { suppressQueueInsertToast: true },
                             );
 
                             eventEmitter.emit('AUTODJ_QUEUE_ADDED', {
@@ -138,7 +139,9 @@ export const useAutoDJ = () => {
                     });
 
                     if (songsToAdd.length > 0) {
-                        player.addToQueueByData(songsToAdd, Play.LAST);
+                        player.addToQueueByData(songsToAdd, Play.LAST, undefined, undefined, {
+                            suppressQueueInsertToast: true,
+                        });
 
                         eventEmitter.emit('AUTODJ_QUEUE_ADDED', {
                             songCount: songsToAdd.length,

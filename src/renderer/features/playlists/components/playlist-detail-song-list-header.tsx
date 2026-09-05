@@ -154,6 +154,7 @@ const PlaylistDetailSongListHeaderBase = (
     return (
         <Stack gap={0} ref={ref}>
             <LibraryHeader
+                condensedHero
                 containerClassName={styles.playlistHeader}
                 imageOverlay={
                     <ImageUploadOverlay data={data} onUploadFile={handlePlaylistImageUpload} />
